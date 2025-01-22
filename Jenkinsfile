@@ -1,7 +1,7 @@
 pipeline {
-  agent none
-  
-  stage('Build and Analysis with SonarQube') {
+    agent none
+    stages {
+        stage('Build and Analysis with SonarQube') {
             agent any
             steps {
                 script {
@@ -10,4 +10,5 @@ pipeline {
                 }
             }
         }
+    }
 }
