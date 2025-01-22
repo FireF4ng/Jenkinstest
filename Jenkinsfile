@@ -1,23 +1,13 @@
 pipeline {
-  agent any
+  agent none
   
-  stages {
-    stage("build") {
-      steps {
-        echo 'Building the application'
-      }
-    }
-    
-    stage("test") {
-      steps {
-        echo 'Testing the application'
-      }
-    }
-  
-    stage("deploy") {
-      steps {
-        echo 'Deploying the application'
-      }
-    }
-  }
+  stage('Build and Analysis with SonarQube') {
+            agent any
+            steps {
+                script {
+                    // Exécution de la commande Maven pour construire et analyser avec SonarQube
+                    sh 'mvn clean package sonar:sonar'
+                }
+            }
+        }
 }
