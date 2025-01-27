@@ -1,33 +1,40 @@
 from random import randint
 
-# Game parameters
-MIN_NUMBER = 1
-MAX_NUMBER = 100
-MAX_GUESSES = 10
+class Game:
+    def __init__(self):
+        self.MIN_NUMBER = 1
+        self.MAX_NUMBER = 100
+        self.MAX_GUESSES = 10
+        self.randnumber = randint(self.MIN_NUMBER, self.MAX_NUMBER)
+        self.numberofguesses = 0
+        self.allguesses = []
+        self.correctguess = False
+    
+    def play(self):
+        print("Welcome to the Higher or Lower Game")
+        print("Your goal is to guess the generated number ("+str(self.MIN_NUMBER) +
+              "-"+str(self.MAX_NUMBER)+") within "+str(self.MAX_GUESSES)+" tries")
+        print("Good luck !!!")
+        while self.numberofguesses < self.MAX_GUESSES:
+            print("You have " + str(self.MAX_GUESSES-self.numberofguesses) +
+                  " guesses left")
+            guess = int(input("Enter your guess: "))
+            self.numberofguesses += 1
+            self.allguesses.append(guess)
+            if self.randnumber > guess:
+                print("The number is higher")
+            elif self.randnumber < guess:
+                print("The number is lower")
+            else:
+                print("Congratulations, you have guessed the number")
+                self.correctguess = True
+                break
+            print("--------------------------------")
+        print("The number was: " + str(self.randnumber))
+        if not self.correctguess:
+            print("You have run out of guesses, better luck next time")
+    
 
-# Number to be guessed
-randnumber = randint(MIN_NUMBER, MAX_NUMBER)
-# Current number of guesses
-numberofguesses = 0
-# A list of all guesses
-allguesses = []
-# is a correct guess
-correctguess = False
-
-print("Welcome to the Higher or Lower Game")
-print("Your goal is to guess the generated number ("+str(MIN_NUMBER) +
-"-"+str(MAX_NUMBER)+") within "+str(MAX_GUESSES)+" tries")
-print("Good luck !!!")
-while """cond-arrêt""":
-# Afficher le nombre des essais restants
-# Lire le chiffre depuis la console, incrémenter le nombre d'essais et
-    ajouter le chiffre courant à la liste des essais
-# Comparer les chiffres en donnant des indices au joueur en fonction
-    de son essai courant
-    if ("""si le chiffre généré est plus grand que le chiffre courant"""):
-    if ("""si le chiffre généré est plus petit que le chiffre courant"""):
-    if ("""si le chiffre généré est le même que le chiffre courant"""):
-    # Afficher la liste des essais
-    print("Your guesses are :" + str(allguesses))
-    if """si le joueur a gagné""":
-    if """si le joueur a perdu""":
+if __name__ == "__main__": 
+    game = Game()
+    game.play()
