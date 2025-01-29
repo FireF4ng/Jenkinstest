@@ -12,14 +12,20 @@ def home():
 
 @main_controller.route("/login", methods=["GET", "POST"])
 def login():
+    message = 'Please enter username and password'
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        user = User.query.filter_by(username=username, password=password).first()
-        if user:
-            session["user"] = user.username
-            return redirect(url_for("main_controller.main_menu"))
-    return render_template("login.html")
+        if not username or not password:
+            message = "Error: Please enter username and password"
+        elif not User.query.filter_by(username=username).first() or not User.query.filter_by(password=password).first():
+            message = "Error: Invalid username or password"
+        else:
+            user = User.query.filter_by(username=username, password=password).first()
+            if user:
+                session["user"] = user.username
+                return redirect(url_for("main_controller.main_menu"))
+    return render_template("login.html", message=message)
 
 @main_controller.route("/logout")
 def logout():
