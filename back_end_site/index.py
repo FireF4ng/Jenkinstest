@@ -12,9 +12,10 @@ app.register_blueprint(main_controller)
 with app.app_context():
     db.create_all()
 
-    admin_user = User("admin", "admin", "admin")
-    db.session.add(admin_user)
-    db.session.commit()
+    if not User.query.filter_by(username="admin").first():    
+        admin_user = User("admin", "admin", "admin")
+        db.session.add(admin_user)
+        db.session.commit()
     
 
 if __name__ == "__main__":
