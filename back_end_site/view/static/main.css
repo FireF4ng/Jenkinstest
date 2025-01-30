@@ -1,0 +1,385 @@
+.header {
+    position: fixed;
+    top: 0%;
+    width: 100%;
+    box-sizing: border-box;
+    background: grey;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.alpha{
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    padding: 20%;
+}
+
+.boxes {
+    display: flex;
+    gap: 0.5%;
+    justify-content: center;
+    margin-top: 20px;
+    position: fixed;
+    top: 13%;
+    left: 13%;
+    align-items: center;
+}
+.box {
+    width: 350px;
+    height: 750px;
+    background-color: whitesmoke;
+    display: flex;
+    align-items:flex-start;
+    justify-content: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 100%;
+    
+}
+
+.bravo {
+    gap: 1%;
+}
+
+.white_line {
+    background-color: white;
+    width: 10px;
+    height: 75px;
+    border-radius: 8px;
+    left: 16.5%;
+    top: 25%;
+    position: fixed;
+}
+
+.PHis {
+    top: 25.5%;
+    left: 17.3%;
+    position: fixed;
+}
+
+.his_deb {
+    position: absolute;
+    top: 24.5%;
+    left: 14.3%;
+    z-index: 10;
+}
+
+.his_fin {
+    position: fixed;
+    top: 30.8%;
+    left: 14.3%;
+}
+
+.PMath {
+    position: fixed;
+    top: 34.5%;
+    left: 17.3%;
+}
+
+.math_deb {
+    left: 14.3%;
+    top: 34%;
+    position: fixed;
+}
+
+.math_fin {
+    left: 14%;
+    top: 46%;
+    position: fixed;
+}
+
+.blue_line {
+    background-color: blue;
+    width: 10px;
+    height: 125px;
+    border-radius: 8px;
+    left: 16.5%;
+    top: 34%;
+    position: fixed;
+}
+
+.pause {
+    left: 17.3%;
+    top: 48.5%;
+    position: fixed;
+}
+
+.finpause {
+    left: 14%;
+    top: 53.5%;
+    position: fixed;
+}
+
+.red_line {
+    background-color: red;
+    width: 10px;
+    height: 75px;
+    border-radius: 8px;
+    left: 16.5%;
+    top: 48%;
+    position: fixed;
+}
+
+.cyan_line {
+    background-color: cyan;
+    width: 10px;
+    height: 125px;
+    border-radius: 8px;
+    left: 16.5%;
+    top: 57%;
+    position: fixed;
+}
+.phys_deb {
+    left: 14%;
+    top: 57%;
+    position: fixed;
+}
+.phys_fin {
+    left: 14%;
+    top: 68%;
+    position: fixed;
+}
+.Phys {
+    left: 17.3%;
+    top: 57.5%;
+    position: fixed;
+}
+
+.yellow_line {
+    background-color: yellow;
+    width: 10px;
+    height: 125px;
+    border-radius: 8px;
+    left: 16.5%;
+    top: 71%;
+    position: fixed;
+}
+.Peps {
+    left: 17.3%;
+    top: 71.5%;
+    position: fixed;
+}
+.eps_deb {
+    left: 14%;
+    top: 71%;
+    position: fixed;
+}
+.eps_fin {
+    left: 14%;
+    top: 82.5%;
+    position: fixed;
+}
+
+.boxx{
+    width: 450px;
+    height: 250px;
+    background-color: whitesmoke;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 100%;
+    position: fixed;
+    top: 43%;
+    left: 51%;
+    color: burlywood;
+}
+
+.box_devoir {
+    width: 350px;
+    height: 750px;
+    background-color: whitesmoke;
+    color: darkcyan;
+    display: flex;
+    align-items: first baseline;
+    justify-content: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 100%;
+    position: fixed;
+    top: 15%;
+    left: 32%;
+}
+
+.box_note {
+    background-color: burlywood;
+}
+
+.note_phy {
+    width: 430px;
+    height: 50px;
+    background-color: white;
+    display: flex;
+    color: black;
+    align-items: center;
+    justify-content: left;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 100%;
+    position: fixed;
+    top: 54%;
+    left: 51.5%;
+}
+
+.vie_scolaire {
+    width: 450px;
+    height: 250px;
+    background-color: whitesmoke;
+    color: blue;
+    display: flex;
+    align-items: first baseline;
+    justify-content: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 100%;
+    position: fixed;
+    top: 15%;
+    left: 51%;
+}
+
+.note_ang {
+    width: 430px;
+    height: 50px;
+    background-color: white;
+    display: flex;
+    color: black;
+    align-items: center;
+    justify-content: left;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 100%;
+    position: fixed;
+    top: 47.5%;
+    left: 51.5%;
+}
+
+.not_phy {
+    width: 100px;
+    height: 40px;
+    background-color: burlywood;
+    display: flex;
+    color: black;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 100%;
+    position: absolute;
+    z-index: 10;
+    top: 48%;
+    left: 68%;
+
+}
+
+.not_ang {
+    width: 100px;
+    height: 40px;
+    background-color: burlywood;
+    display: flex;
+    color: black;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 100%;
+    position: absolute;
+    z-index: 10;
+    top: 54.6%;
+    left: 68%;
+}
+
+.dev_his {
+    width: 342px;
+    height: 100px;
+    background-color: white;
+    color: black;
+    display: inline;
+    
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 100%;
+    position: fixed;
+    z-index: 10;
+    top: 25%;
+    left: 32.2%;
+}
+
+.dev_math {
+    width: 342px;
+    height: 100px;
+    background-color: white;
+    color: black;
+    display: inline;
+    
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 100%;
+    position: fixed;
+    z-index: 10;
+    top: 38%;
+    left: 32.2%;
+}
+
+.dev_fra {
+    width: 342px;
+    height: 100px;
+    background-color: white;
+    color: black;
+    display: inline;
+    
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 100%;
+    position: fixed;
+    z-index: 10;
+    top: 51%;
+    left: 32.2%;
+}
+
+.foot {
+    position: fixed;
+    top: 97%;
+    background-color: grey;
+    color: white;
+    left: 0%;
+    width: 100%;
+    height: 50%;
+}
+
+.mention_legale {
+    color: white;
+    position: fixed;
+    left: 1%;
+    top: 97%;
+}
+
+.decla_d_acces {
+    color: white;
+    position: fixed;
+    left: 8%;
+    top: 97%;
+}
+
+.plan_du_site {
+    color: white;
+    position: fixed;
+    left: 19%;
+    top: 97%;
+}
+
+.hebrg_fra {
+    color: white;
+    position: fixed;
+    left: 24%;
+    top: 97%;
+}
+
+.index {
+    color: white;
+    position: fixed;
+    left: 41.5%;
+    top: 97%;
+}
