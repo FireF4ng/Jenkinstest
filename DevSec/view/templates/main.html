@@ -47,22 +47,23 @@
         <div class="row">
             <!-- Left Column - Agenda -->
             <div class="col-md-4">
-                <div class="boxes">
-                    <div class="box p-3">
-                        <h4 class="mb-4">Semaine A</h4>
-                        {% if agenda %}
-                            {% for cours in agenda %}
-                            <div class="bravo position-relative mb-4">
-                                <div class="timeline-line white_line"></div>
-                                <div class="PHis">{{ cours.matiere }}</div>
-                                <div class="his_deb">{{ cours.debut }}</div>
-                                <div class="his_fin">{{ cours.fin }}</div>
+                <div class="box p-3">
+                    <h4 class="mb-4">Agenda</h4>
+                    {% if agenda %}
+                        {% for cours in agenda %}
+                            <div class="agenda-item p-2 mb-2">
+                                {% if role == "eleve" %}
+                                    <strong>{{ cours.matiere }}</strong> avec {{ cours.prof }} <br>
+                                    <small class="text-muted">{{ cours.debut }} - {{ cours.fin }}</small>
+                                {% elif role == "professeur" %}
+                                    <strong>{{ cours.matiere }}</strong> (Classe : {{ cours.classe }}) <br>
+                                    <small class="text-muted">{{ cours.debut }} - {{ cours.fin }}</small>
+                                {% endif %}
                             </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="text-muted">Aucun cours prévu cette semaine</div>
-                        {% endif %}
-                    </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-muted">Aucun cours prévu</div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -157,25 +158,29 @@
                 </div>
             </div>
 
-            <!-- Centered Homework Section -->
+            <!-- Center Column - Travail à faire -->
             <div class="col-md-4">
-                <div class="box_devoir p-3 mb-4">
+                <div class="box_devoir p-3">
                     <h4 class="text-center mb-3"><strong>Travail à faire</strong></h4>
                     {% if devoirs %}
                         {% for devoir in devoirs %}
-                        <div class="devoir-item mb-3 p-2">
-                            <h5 class="mb-1">{{ devoir.matiere }}</h5>
-                            <p class="mb-0 text-muted">{{ devoir.contenu }}</p>
-                        </div>
+                            <div class="devoir-item p-2 mb-2">
+                                {% if role == "eleve" %}
+                                    <h5 class="mb-1">{{ devoir.matiere }}</h5>
+                                    <p class="mb-0 text-muted">{{ devoir.contenu }}</p>
+                                {% elif role == "professeur" %}
+                                    <h5 class="mb-1">{{ devoir.matiere }} (Classe : {{ devoir.classe }})</h5>
+                                    <p class="mb-0 text-muted">{{ devoir.contenu }}</p>
+                                {% endif %}
+                            </div>
                         {% endfor %}
                     {% else %}
-                        <div class="text-muted">Aucun devoir à afficher</div>
+                        <div class="text-muted">Aucun travail à afficher</div>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
-
     <footer class="footer mt-auto py-3 bg-light fixed-bottom">
         <div class="container">
             <div class="row">

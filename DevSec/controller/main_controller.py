@@ -1,6 +1,7 @@
 from flask import render_template, redirect, url_for, session, request, jsonify
-from model.user_model import Eleve, Professeur, Note, db
+from model.user_model import Eleve, Professeur, Note, Classe, Matiere, ProfMatiere, db
 from flask import Blueprint
+import random
 
 main_controller = Blueprint("main_controller", __name__)
 
@@ -17,14 +18,12 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
 
-        # Check if user is a student
         user = Eleve.query.filter_by(username=username, mdp=password).first()
         if user:
             session["user"] = username
             session["role"] = "eleve"
             return redirect(url_for("main_controller.main_menu"))
 
-        # Check if user is a professor
         user = Professeur.query.filter_by(username=username, mdp=password).first()
         if user:
             session["user"] = username
@@ -51,26 +50,38 @@ def main_menu():
     if role == "eleve":
         eleve = Eleve.query.filter_by(username=session["user"]).first()
         notes = eleve.get_notes() if eleve else []
-        return render_template("main.html", role=role, eleve=eleve, notes=notes)
+        agenda = [
+            {"matiere": m.matiere, "debut": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}", "fin": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}", "prof": (Professeur.query.filter_by(id=pm.professeur_id).first().nom +' '+ Professeur.query.filter_by(id=pm.professeur_id).first().prenom) if pm else "Inconnu"} 
+            for pm in ProfMatiere.query.all() for m in Matiere.query.filter_by(id=pm.matiere_id).all()
+        ]
+        devoirs = [
+            {"matiere": m.matiere, "contenu": "Exercice aléatoire"} for m in Matiere.query.all()
+        ]
+        return render_template("main.html", role=role, eleve=eleve, notes=notes, agenda=agenda, devoirs=devoirs)
 
     elif role == "professeur":
         professeur = Professeur.query.filter_by(username=session["user"]).first()
-
         if not professeur:
             return redirect(url_for("main_controller.logout"))
 
-        # Get last graded students
         last_notes = (
             Note.query
             .join(Eleve)
-            .join(Professeur, Professeur.id == Note.matiere_id)  # Assuming Prof is assigned to subjects
-            .filter(Professeur.username == session["user"])
+            .join(ProfMatiere, ProfMatiere.matiere_id == Note.matiere_id)
+            .filter(ProfMatiere.professeur_id == professeur.id)
             .order_by(Note.date.desc())
             .limit(5)
             .all()
         )
-
-        return render_template("main.html", role=role, professeur=professeur, last_notes=last_notes)
+        agenda = [
+            {"classe": c.nom, "matiere": m.matiere, "debut": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}", "fin": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}"} 
+            for c in Classe.query.all() for m in Matiere.query.all()
+        ]
+        devoirs = [
+            {"classe": c.nom, "matiere": m.matiere, "contenu": "Devoir aléatoire"} 
+            for c in Classe.query.all() for m in Matiere.query.all()
+        ]
+        return render_template("main.html", role=role, professeur=professeur, last_notes=last_notes, agenda=agenda, devoirs=devoirs)
 
     return redirect(url_for("main_controller.logout"))
 
