@@ -16,7 +16,7 @@
                 </a>
 
                 <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
-                    <li><a href="#" class="nav-link px-2 link-secondary"><img src="maison_logo-removebg-preview.png" width="30"></a></li>
+                    <li><a href="#" class="nav-link px-2 link-secondary"><img src="../static/icon.png" width="30"></a></li>
                     <li><a href="#" class="nav-link px-2 link-body-emphasis">Information personelle</a></li>
                     <li><a href="#" class="nav-link px-2 link-body-emphasis">Cahier de texte</a></li>
                     <li><a href="#" class="nav-link px-2 link-body-emphasis">Notes</a></li>
@@ -36,99 +36,160 @@
                         <li><a class="dropdown-item" href="#">Paramètre</a></li>
                         <li><a class="dropdown-item" href="#">Profile</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#">Déconnexion</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main_controller.logout') }}">Déconnexion</a></li>
                     </ul>
                 </div>
             </div>
         </div>
     </header>
 
+    <div class="container-fluid mt-5 pt-5">
+        <div class="row">
+            <!-- Left Column - Agenda -->
+            <div class="col-md-4">
+                <div class="boxes">
+                    <div class="box p-3">
+                        <h4 class="mb-4">Semaine A</h4>
+                        {% if agenda %}
+                            {% for cours in agenda %}
+                            <div class="bravo position-relative mb-4">
+                                <div class="timeline-line white_line"></div>
+                                <div class="PHis">{{ cours.matiere }}</div>
+                                <div class="his_deb">{{ cours.debut }}</div>
+                                <div class="his_fin">{{ cours.fin }}</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-muted">Aucun cours prévu cette semaine</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
 
+            <!-- Right Column - Vie Scolaire -->
+            <div class="col-md-4">
+                <div class="vie-scolaire-container p-3 mb-4">
+                    <h4 class="mb-4">Vie Scolaire</h4>
+                    
+                    <!-- Notes Sub-container -->
+                    <div class="notes-container row p-3 mb-4">
+                        <!-- Show different sections based on role -->
+                        {% if role == "eleve" %}
+                        <div class="col">
+                            <h4>Mes Notes</h4>
+                            {% for note in notes %}
+                            <div class="note-item">
+                                <strong>{{ note.matiere.matiere }}</strong>: {{ note.note }} ({{ note.date }})
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% elif role == "professeur" %}
+                        <div class="col">
+                            <h4>Derniers Élèves Notés</h4>
+                            {% for note in last_notes %}
+                            <div class="note-item col">
+                                <strong class="row-10">{{ note.eleve.nom }} {{ note.eleve.prenom }}</strong>: {{ note.note }} ({{ note.date }})
+                                <button class="edit-score-btn row-2" data-note-id="{{ note.id }}">✏️</button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
 
-    <div class="boxes">
-        <div class="box">Semaine A</div>
-    </div>
-    <div class="bravo">
-        <div class="PHis"> HISTOIRE</div>
-        <div class="white_line"></div>
-        <div class="his_deb">8H30</div>
-        <div class="his_fin">9H30</div>
-    </div>
-    <div>
-        <div class="PMath">MATHEMATIQUES</div>
-        <div class="math_deb">9H40</div>
-        <div class="math_fin">12H00</div>
-        <div class="blue_line"></div>
-    </div>
-    <div>
-        <div class="pause">PAUSE</div>
-        <div class="finpause">13H05</div>
-        <div class="red_line"></div>
-    </div>
-    <div>
-        <div class="Phys">PHYSIQUE CHIMIE</div>
-        <div class="cyan_line"></div>
-        <div class="phys_deb">13H10</div>
-        <div class="phys_fin">15H10</div>
-    </div>
-    <div>
-        <div class="Peps">EPS</div>
-        <div class="yellow_line"></div>
-        <div class="eps_deb">15H20</div>
-        <div class="eps_fin">17H00</div>
-    </div>
+                        <!-- Popup for editing score -->
+                        <div id="editScoreModal" class="modal">
+                            <div class="modal-content">
+                                <span class="close">&times;</span>
+                                <h4>Modifier la note</h4>
+                                <input type="number" id="newScoreInput" min="0" max="20">
+                                <button id="saveScoreBtn" class="btn btn-success col-4">Enregistrer</button>
+                            </div>
+                        </div>
 
-    <div>
-        <div class="boxx"></div>
-        <div class="box_note"></div>
-        <div class="note_phy"></div>
-        <div class="note_ang"></div>
-        <div class="not_phy">11,00</div>
-        <div class="not_ang">10,00/10</div>
-        <div class="boxx"><strong>Dernières notes</strong></div>
-        <div class="note_ang">ANGLAIS LV1 <br>
-            Hier
+                        <script>
+                            document.querySelectorAll('.edit-score-btn').forEach(button => {
+                                button.addEventListener('click', function() {
+                                    let noteId = this.dataset.noteId;
+                                    document.getElementById('editScoreModal').style.display = 'block';
+                                    document.getElementById('saveScoreBtn').setAttribute('data-note-id', noteId);
+                                });
+                            });
+                            
+                            // Close the popup when clicking the "×" button
+                            document.querySelector('.close').addEventListener('click', function() {
+                                document.getElementById('editScoreModal').style.display = 'none';
+                            });
+                            
+                            // Close the popup when clicking outside of it
+                            window.addEventListener('click', function(event) {
+                                let modal = document.getElementById('editScoreModal');
+                                if (event.target === modal) {
+                                    modal.style.display = 'none';
+                                }
+                            });
+                            
+                            // Handle saving new score
+                            document.getElementById('saveScoreBtn').addEventListener('click', function() {
+                                let noteId = this.dataset.noteId;
+                                let newScore = document.getElementById('newScoreInput').value;
+                            
+                                fetch('/update_score', {
+                                    method: 'POST',
+                                    body: new URLSearchParams({ note_id: noteId, new_score: newScore }),
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        location.reload();
+                                    } else {
+                                        alert('Erreur: ' + data.error);
+                                    }
+                                });
+                            });
+                        </script>
+                    </div>
 
+                    <!-- Documents Sub-container -->
+                    <div class="documents-container p-3">
+                        <h5>Documents</h5>
+                        <div class="text-muted">Aucun document disponible</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Centered Homework Section -->
+            <div class="col-md-4">
+                <div class="box_devoir p-3 mb-4">
+                    <h4 class="text-center mb-3"><strong>Travail à faire</strong></h4>
+                    {% if devoirs %}
+                        {% for devoir in devoirs %}
+                        <div class="devoir-item mb-3 p-2">
+                            <h5 class="mb-1">{{ devoir.matiere }}</h5>
+                            <p class="mb-0 text-muted">{{ devoir.contenu }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-muted">Aucun devoir à afficher</div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        <div class="note_phy">PHYSIQUE CHIMIE <br>
-        Hier</div>
-    </div>   
-    <div>
-        <div class="box_devoir"><strong>Travail à faire pour les prochains jours</strong></div>
-        <div class="dev_his">
-            <p><strong>HISTOIRE</strong></p>
-            <p style="text-align: center;">Reviser toute les dates de la seconde guerre mondiale vue en cours</p>
-        </div>
-        <div class="vie_scolaire"><strong>Vie Scolaire</strong></div>
-        <div class="dev_math">
-            <p><strong>MATHEMATIQUES</strong></p>
-            <p style="text-align: center;">Reviser le chapitre IV en vue du contrôle mercredi prochain</p>
-        </div>
-        <div class="dev_fra">
-            <p><strong>FRANCAIS</strong></p>
-            <p style="text-align: center;">Lire le livre vue en cours jusqu'a la fin du première acte</p>
-        </div>
-        <div></div>
-    </div> 
+    </div>
 
-    <div>
-        <footer class="foot">
-          <p class="col-md-4 mb-0 text-body-secondary">&copy; 2024 Company, Inc</p>
-      
-          <a href="/" class="foot">
-            <svg class="bi me-2" width="40" height="32"><use xlink:href="#bootstrap"/></svg>
-          </a>
-      
-          <ul class="nav col-md-4 justify-content-end">
-            <li class="nav-item"><a href="#" class="mention_legale">Mention légales</a></li>
-            <li class="nav-item"><a href="#" class="decla_d_acces">Déclaration d'accessibilité</a></li>
-            <li class="nav-item"><a href="#" class="plan_du_site">Plan du site</a></li>
-            <li class="nav-item"><a href="#" class="hebrg_fra">Toutes vos données sont hébrgées en France</a></li>
-            <li class="nav-item"><a href="#" class="index">INDEX EDUCATION</a></li>
-          </ul>
-        </footer>
-      </div>
+    <footer class="footer mt-auto py-3 bg-light fixed-bottom">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2024 Company, Inc</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="#" class="text-muted me-3">Mentions légales</a>
+                    <a href="#" class="text-muted">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </html>

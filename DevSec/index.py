@@ -1,30 +1,30 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-import sqlite3
+from model.user_model import *
+from controller.main_controller import main_controller
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="view/templates", static_folder="view/static")
 app.config.from_object("config.Config")
 
-db = SQLAlchemy(app)
+db.init_app(app)  # Initialize db with app
+
+app.register_blueprint(main_controller)
 
 def init_db():
     """Initialise la base SQLite avec les données de pronote.sql"""
     db_path = "instance/database.db"
-    sql_file = "instance/pronote.sql"
     
     if not os.path.exists(db_path):
         print("Initialisation de la base...")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        # Create the database file
+        open(db_path, 'w').close()
         
-        with open(sql_file, "r", encoding="utf-8") as f:
-            sql_script = f.read()
-        
-        cursor.executescript(sql_script)
-        conn.commit()
-        conn.close()
-        print("Base de données initialisée.")
+        # Create all tables using SQLAlchemy
+        with app.app_context():
+            db.create_all()
+            print("Database tables created successfully!")
+            create_samples()
+            add_admin_user()
     else:
         print("La base de données existe déjà.")
 
@@ -32,4 +32,4 @@ def init_db():
 init_db()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True)  # Set debug to True for debugging
