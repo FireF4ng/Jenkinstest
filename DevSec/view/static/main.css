@@ -4,9 +4,15 @@
     position: fixed;
     top: 0;
     width: 100%;
-    background: grey;
+    background: rgb(128, 128, 128, 0.75);
     z-index: 1000;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+body {
+    background: linear-gradient(rgba(0, 0, 0, 0.327),rgba(0, 0, 0, 0.2)), url('../static/login_background.png') no-repeat center center fixed ;
+    background-size: cover;
+    height: 100vh;
 }
 
 .box, .boxx, .box_devoir, .vie-scolaire-container {
