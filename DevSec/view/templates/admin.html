@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Interface</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../static/admin.css">
+</head>
+<body class="admin-body">
+    <header class="admin-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="text-light mb-0">Admin Dashboard</h3>
+                <a href="{{ url_for('main_controller.logout') }}" class="btn btn-danger">Déconnexion</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Database Navigation -->
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        Database Tables
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action" data-table="eleves">Élèves</a>
+                        <a href="#" class="list-group-item list-group-item-action" data-table="professeurs">Professeurs</a>
+                        <a href="#" class="list-group-item list-group-item-action" data-table="matieres">Matières</a>
+                        <a href="#" class="list-group-item list-group-item-action" data-table="notes">Notes</a>
+                        <a href="#" class="list-group-item list-group-item-action" data-table="classes">Classes</a>
+                        <a href="#" class="list-group-item list-group-item-action" data-table="profs_matieres">Prof-Matières</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editing Section -->
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <span id="current-table">Select a table to edit</span>
+                        <button class="btn btn-sm btn-light float-end" id="add-new">Add New</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="table-content" class="mb-3" style="max-height: 400px; overflow-y: auto;">
+                            <!-- Dynamic content will be loaded here -->
+                        </div>
+                        <div id="edit-form" class="mt-4">
+                            <!-- Edit form will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Entry</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="add-modal-body">
+                    <!-- Add form will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('.list-group-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const table = this.dataset.table;
+                loadTableData(table);
+            });
+        });
+
+        document.getElementById('add-new').addEventListener('click', () => {
+            const table = document.querySelector('.list-group-item.active').dataset.table;
+            loadAddForm(table);
+        });
+
+        async function loadTableData(table) {
+            const response = await fetch(`/admin/data?table=${table}`);
+            const data = await response.json();
+            
+            let html = '<div class="list-group">';
+            data.entries.forEach(entry => {
+                html += `<a href="#" class="list-group-item list-group-item-action" 
+                          data-id="${entry.id}" onclick="loadEditForm('${table}', ${entry.id})">
+                          ${JSON.stringify(entry)}
+                        </a>`;
+            });
+            html += '</div>';
+            
+            document.getElementById('table-content').innerHTML = html;
+            document.getElementById('current-table').textContent = `Editing: ${table}`;
+            document.querySelectorAll('.list-group-item').forEach(i => i.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        async function loadEditForm(table, id) {
+            const response = await fetch(`/admin/data?table=${table}&id=${id}`);
+            const data = await response.json();
+            
+            let formHtml = `<form id="edit-form-${table}">`;
+            Object.entries(data.entry).forEach(([key, value]) => {
+                formHtml += `
+                    <div class="mb-3">
+                        <label>${key}</label>
+                        <input type="text" class="form-control" name="${key}" value="${value}">
+                    </div>`;
+            });
+            formHtml += `
+                <button type="button" class="btn btn-primary" onclick="updateEntry('${table}', ${id})">Save</button>
+                <button type="button" class="btn btn-danger" onclick="deleteEntry('${table}', ${id})">Delete</button>
+            </form>`;
+            
+            document.getElementById('edit-form').innerHTML = formHtml;
+        }
+
+        // Add these functions to the existing script
+        async function loadAddForm(table) {
+            const response = await fetch(`/admin/form?table=${table}`);
+            const fields = await response.json();
+
+            let formHtml = `<form id="add-form-${table}">`;
+            fields.forEach(field => {
+                formHtml += `
+                    <div class="mb-3">
+                        <label>${field}</label>
+                        <input type="text" class="form-control" name="${field}">
+                    </div>`;
+            });
+            formHtml += `
+                <button type="button" class="btn btn-success" onclick="addEntry('${table}')">Add</button>
+            </form>`;
+
+            document.getElementById('add-modal-body').innerHTML = formHtml;
+            new bootstrap.Modal(document.getElementById('addModal')).show();
+        }
+
+        async function addEntry(table) {
+            const form = document.getElementById(`add-form-${table}`);
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            const response = await fetch(`/admin/add`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({table, data})
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                loadTableData(table);
+                bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+            }
+        }
+
+        async function updateEntry(table, id) {
+            const form = document.getElementById(`edit-form-${table}`);
+            const formData = new FormData(form);
+            const updates = Object.fromEntries(formData.entries());
+
+            const response = await fetch(`/admin/update`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({table, id, updates})
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                loadTableData(table);
+            }
+        }
+
+        async function deleteEntry(table, id) {
+            if (!confirm('Are you sure you want to delete this entry?')) return;
+
+            const response = await fetch(`/admin/delete`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({table, id})
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                loadTableData(table);
+                document.getElementById('edit-form').innerHTML = '';
+            }
+        }
+
+    </script>
+</body>
+</html>
