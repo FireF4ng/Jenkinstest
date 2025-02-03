@@ -106,55 +106,50 @@ def update_score():
     return jsonify({"error": "Note not found"}), 404
 
 @main_controller.route("/admin/data")
-def admin_data():
-    if session.get("user") != "admin":
-        return jsonify({"error": "Unauthorized"}), 403
-    
+def get_table_data():
     table = request.args.get("table")
-    entry_id = request.args.get("id")
-    
-    model = {
-        "eleves": Eleve,
-        "professeurs": Professeur,
-        "matieres": Matiere,
-        "notes": Note,
-        "classes": Classe,
-        "profs_matieres": ProfMatiere
-    }.get(table)
-    
+    search_query = request.args.get("search", "").strip()
+    sort_by = request.args.get("sort", "")
+    sort_order = request.args.get("order", "asc")
+
+    model = None
+    if table == "eleves":
+        model = Eleve
+    elif table == "professeurs":
+        model = Professeur
+    elif table == "matieres":
+        model = Matiere
+    elif table == "notes":
+        model = Note
+    elif table == "classes":
+        model = Classe
+    elif table == "profs_matieres":
+        model = ProfMatiere
+
     if not model:
-        return jsonify({"error": "Invalid table"}), 400
-    
-    if entry_id:
-        entry = model.query.get(entry_id)
-        if not entry:
-            return jsonify({"error": "Entry not found"}), 404
-        
-        # Convert to dict and handle relationships
-        entry_data = {col.name: getattr(entry, col.name) 
-                     for col in entry.__table__.columns}
-        
-        # Handle special cases
-        if table == "notes":
-            entry_data["date"] = entry_data["date"].isoformat()
-        
-        return jsonify({"entry": entry_data})
-    
-    # Get all entries
-    entries = model.query.all()
-    entries_data = []
-    
-    for entry in entries:
-        entry_data = {col.name: getattr(entry, col.name) 
-                     for col in entry.__table__.columns}
-        
-        # Handle special cases
-        if table == "notes":
-            entry_data["date"] = entry_data["date"].isoformat()
-        
-        entries_data.append(entry_data)
-    
-    return jsonify({"entries": entries_data})
+        return jsonify({"success": False, "error": "Invalid table"}), 400
+
+    query = model.query
+
+    # Search functionality
+    if search_query:
+        filters = []
+        for column in model.__table__.columns:
+            if column.type.python_type == str:
+                filters.append(column.ilike(f"%{search_query}%"))
+        query = query.filter(db.or_(*filters))
+
+    # Sorting functionality
+    if sort_by:
+        column = getattr(model, sort_by, None)
+        if column:
+            query = query.order_by(column.asc() if sort_order == "asc" else column.desc())
+
+    entries = query.all()
+    result = [{col.name: getattr(entry, col.name) for col in model.__table__.columns} for entry in entries]
+
+    return jsonify({"success": True, "entries": result})
+
 
 @main_controller.route("/admin/form")
 def admin_form():
@@ -177,6 +172,48 @@ def admin_form():
     # Get column names excluding internal SQLAlchemy attributes
     fields = [col.name for col in model.__table__.columns if not col.name.startswith('_')]
     return jsonify(fields)
+
+
+@main_controller.route("/admin/update", methods=["POST"])
+def update_entry():
+    data = request.json
+    table = data.get("table")
+    entry_id = data.get("id")
+    updates = data.get("updates")
+
+    if not table or not entry_id or not updates:
+        return jsonify({"success": False, "error": "Missing required fields"}), 400
+
+    model = None
+    if table == "eleves":
+        model = Eleve
+    elif table == "professeurs":
+        model = Professeur
+    elif table == "matieres":
+        model = Matiere
+    elif table == "notes":
+        model = Note
+    elif table == "classes":
+        model = Classe
+    elif table == "profs_matieres":
+        model = ProfMatiere
+
+    if not model:
+        return jsonify({"success": False, "error": "Invalid table"}), 400
+
+    # Find the entry and update it
+    entry = model.query.get(entry_id)
+    if not entry:
+        return jsonify({"success": False, "error": "Entry not found"}), 404
+
+    for key, value in updates.items():
+        if hasattr(entry, key):
+            setattr(entry, key, value)
+
+    db.session.commit()
+    return jsonify({"success": True, "message": "Entry updated successfully"})
+
+
 
 @main_controller.route("/admin/add", methods=["POST"])
 def admin_add():
