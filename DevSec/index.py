@@ -11,22 +11,29 @@ db.init_app(app)  # Initialize db with app
 app.register_blueprint(main_controller)
 
 def init_db():
-    """Initialise la base SQLite avec les données de pronote.sql"""
-    db_path = "db/database.db"
+    """Initialize the database"""
+    db_dir = "db"
+    db_path = os.path.join(db_dir, "database.db")
     
-    if not os.path.exists(db_path):
-        print("Initialisation de la base...")
-        # Create the database file
-        open(db_path, 'w').close()
-        
-        # Create all tables using SQLAlchemy
+    try:
         with app.app_context():
+            if not os.path.exists(db_dir):
+                os.makedirs(db_dir)
+                
             db.create_all()
-            print("Database tables created successfully!")
-            create_samples()
-            add_admin_user()
-    else:
-        print("La base de données existe déjà.")
+            
+            # Check if admin exists
+            if not Eleve.query.filter_by(username='admin').first():
+                add_admin_user()
+            
+            # Create samples only if no students exist
+            if not Eleve.query.filter(Eleve.username != 'admin').first():
+                create_samples()
+                
+            print("Database initialized successfully!")
+            
+    except Exception as e:
+        print(f"Database initialization failed: {str(e)}")
 
 # Initialiser la base si elle n'existe pas encore
 init_db()
