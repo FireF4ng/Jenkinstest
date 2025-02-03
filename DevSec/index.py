@@ -12,7 +12,7 @@ app.register_blueprint(main_controller)
 
 def init_db():
     """Initialise la base SQLite avec les données de pronote.sql"""
-    db_path = "instance/database.db"
+    db_path = "db/database.db"
     
     if not os.path.exists(db_path):
         print("Initialisation de la base...")

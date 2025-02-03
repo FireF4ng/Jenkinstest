@@ -1,4 +1,4 @@
-from instance.db import db  # Import db from db.py
+from db.db import db  # Import db from db.py
 from datetime import date  # Import date from datetime module
 
 class Classe(db.Model):
