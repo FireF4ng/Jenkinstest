@@ -106,29 +106,43 @@ def update_score():
     return jsonify({"error": "Note not found"}), 404
 
 @main_controller.route("/admin/data")
-def get_table_data():
+def admin_data():
+    if session.get("user") != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
+    
     table = request.args.get("table")
+    entry_id = request.args.get("id")
     search_query = request.args.get("search", "").strip()
     sort_by = request.args.get("sort", "")
     sort_order = request.args.get("order", "asc")
-
-    model = None
-    if table == "eleves":
-        model = Eleve
-    elif table == "professeurs":
-        model = Professeur
-    elif table == "matieres":
-        model = Matiere
-    elif table == "notes":
-        model = Note
-    elif table == "classes":
-        model = Classe
-    elif table == "profs_matieres":
-        model = ProfMatiere
-
+    
+    model = {
+        "eleves": Eleve,
+        "professeurs": Professeur,
+        "matieres": Matiere,
+        "notes": Note,
+        "classes": Classe,
+        "profs_matieres": ProfMatiere
+    }.get(table)
+    
     if not model:
-        return jsonify({"success": False, "error": "Invalid table"}), 400
-
+        return jsonify({"error": "Invalid table"}), 400
+    
+    if entry_id:
+        entry = model.query.get(entry_id)
+        if not entry:
+            return jsonify({"error": "Entry not found"}), 404
+        
+        # Convert to dict and handle relationships
+        entry_data = {col.name: getattr(entry, col.name) 
+                     for col in entry.__table__.columns}
+        
+        # Handle special cases
+        if table == "notes":
+            entry_data["date"] = entry_data["date"].isoformat()
+        
+        return jsonify({"entry": entry_data})
+    
     query = model.query
 
     # Search functionality
@@ -149,7 +163,6 @@ def get_table_data():
     result = [{col.name: getattr(entry, col.name) for col in model.__table__.columns} for entry in entries]
 
     return jsonify({"success": True, "entries": result})
-
 
 @main_controller.route("/admin/form")
 def admin_form():
