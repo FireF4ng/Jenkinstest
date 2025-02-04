@@ -13,22 +13,17 @@ app.register_blueprint(main_controller)
 def init_db():
     """Initialize the database"""
     db_dir = "db"
-    db_path = os.path.join(db_dir, "database.db")
     
     try:
         with app.app_context():
             if not os.path.exists(db_dir):
                 os.makedirs(db_dir)
                 
-            db.create_all()
+            db.create_all()  # Ensure database schema exists before adding data
             
-            # Check if admin exists
-            if not Eleve.query.filter_by(username='admin').first():
-                add_admin_user()
+            add_admin_user()  # Always create admin user
             
-            # Create samples only if no students exist
-            if not Eleve.query.filter(Eleve.username != 'admin').first():
-                create_samples()
+            create_samples()  # Ensure sample users are added
                 
             print("Database initialized successfully!")
             

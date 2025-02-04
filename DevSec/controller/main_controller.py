@@ -2,7 +2,8 @@ from flask import render_template, redirect, url_for, session, request, jsonify
 from model.user_model import Eleve, Professeur, Note, Classe, Matiere, ProfMatiere, db
 from flask import Blueprint
 import random
-from datetime import date
+from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 main_controller = Blueprint("main_controller", __name__)
 
@@ -14,24 +15,22 @@ def home():
 
 @main_controller.route("/login", methods=["GET", "POST"])
 def login():
-    message = 'Veuillez entrer votre identifiant et mot de passe'
+    message = "Veuillez entrer votre identifiant, mot de passe et clé secrète"
+    
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        username = request.form.get("username")
+        password = request.form.get("password")
+        secret_key = request.form.get("secret_key")
 
-        user = Eleve.query.filter_by(username=username, mdp=password).first()
-        if user:
-            session["user"] = username
-            session["role"] = "eleve"
+        # Check if user exists in either Eleve or Professeur table
+        user = Eleve.query.filter_by(username=username).first() or Professeur.query.filter_by(username=username).first()
+        
+        if user and user.check_password(password) and user.secret_key == secret_key:
+            session["user"] = user.username
+            session["role"] = "eleve" if isinstance(user, Eleve) else "professeur"
             return redirect(url_for("main_controller.main_menu"))
-
-        user = Professeur.query.filter_by(username=username, mdp=password).first()
-        if user:
-            session["user"] = username
-            session["role"] = "professeur"
-            return redirect(url_for("main_controller.main_menu"))
-
-        message = "Erreur : Identifiant ou mot de passe incorrect"
+        
+        message = "Identifiants incorrects ou clé secrète invalide"
     
     return render_template("login.html", message=message)
 
@@ -197,20 +196,17 @@ def update_entry():
     if not table or not entry_id or not updates:
         return jsonify({"success": False, "error": "Missing required fields"}), 400
 
-    model = None
-    if table == "eleves":
-        model = Eleve
-    elif table == "professeurs":
-        model = Professeur
-    elif table == "matieres":
-        model = Matiere
-    elif table == "notes":
-        model = Note
-    elif table == "classes":
-        model = Classe
-    elif table == "profs_matieres":
-        model = ProfMatiere
+    # Map table names to models
+    model_mapping = {
+        "eleves": Eleve,
+        "professeurs": Professeur,
+        "matieres": Matiere,
+        "notes": Note,
+        "classes": Classe,
+        "profs_matieres": ProfMatiere
+    }
 
+    model = model_mapping.get(table)
     if not model:
         return jsonify({"success": False, "error": "Invalid table"}), 400
 
@@ -223,44 +219,47 @@ def update_entry():
         if hasattr(entry, key):
             setattr(entry, key, value)
 
-    db.session.commit()
-    return jsonify({"success": True, "message": "Entry updated successfully"})
+    try:
+        db.session.commit()
+        return jsonify({"success": True, "message": "Entry updated successfully"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 
 @main_controller.route("/admin/add", methods=["POST"])
-def admin_add():
-    if session.get("user") != "admin":
-        return jsonify({"error": "Unauthorized"}), 403
-    
+def add_entry():
     data = request.json
-    table = data["table"]
-    entry_data = data["data"]
-    
-    model = {
+    table = data.get("table")
+    entry_data = data.get("data")
+
+    if not table or not entry_data:
+        return jsonify({"success": False, "error": "Missing required fields"}), 400
+
+    if "date" in entry_data:
+        try:
+            entry_data["date"] = datetime.strptime(entry_data["date"], "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"success": False, "error": "Invalid date format"}), 400
+
+    model_mapping = {
         "eleves": Eleve,
         "professeurs": Professeur,
         "matieres": Matiere,
         "notes": Note,
         "classes": Classe,
         "profs_matieres": ProfMatiere
-    }.get(table)
-    
+    }
+
+    model = model_mapping.get(table)
     if not model:
-        return jsonify({"error": "Invalid table"}), 400
-    
-    try:
-        # Handle special cases
-        if table == "notes":
-            entry_data["date"] = date.fromisoformat(entry_data["date"])
-        
-        new_entry = model(**entry_data)
-        db.session.add(new_entry)
-        db.session.commit()
-        return jsonify({"success": True, "id": new_entry.id})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"success": False, "error": "Invalid table"}), 400
+
+    entry = model(**entry_data)
+    db.session.add(entry)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Entry added successfully"})
 
 @main_controller.route("/admin/delete", methods=["POST"])
 def admin_delete():
@@ -291,3 +290,29 @@ def admin_delete():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 400
+
+@main_controller.route("/update_credentials", methods=["POST"])
+def update_credentials():
+    if "user" not in session:
+        return jsonify({"success": False, "error": "Not logged in"}), 403
+
+    data = request.json
+    old_password = data.get("old_password")
+    old_secret = data.get("old_secret")
+    new_password = data.get("new_password")
+    new_secret = data.get("new_secret")
+
+    if not old_password or not old_secret or not new_password or not new_secret:
+        return jsonify({"success": False, "error": "All fields are required"}), 400
+
+    user = Eleve.query.filter_by(username=session["user"]).first() or Professeur.query.filter_by(username=session["user"]).first()
+    
+    if not user or not check_password_hash(user.mdp, old_password) or user.secret_key != old_secret:
+        return jsonify({"success": False, "error": "Invalid current credentials"}), 400
+
+    # Update credentials
+    user.mdp = generate_password_hash(new_password)
+    user.secret_key = new_secret  # Ensure new secret is unique
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Credentials updated successfully"})

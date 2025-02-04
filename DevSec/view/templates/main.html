@@ -33,11 +33,32 @@
                         <img src="https://github.com/mdo.png" alt="mdo" width="32" height="32" class="rounded-circle">
                     </a>
                     <ul class="dropdown-menu text-small">
-                        <li><a class="dropdown-item" href="#">Paramètre</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="openParametersModal()">Paramètre</a></li>
                         <li><a class="dropdown-item" href="#">Profile</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ url_for('main_controller.logout') }}">Déconnexion</a></li>
                     </ul>
+                </div>
+                <div id="parametersModal" class="modal" style="display:none;">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeParametersModal()">&times;</span>
+                        <h4>Modifier les identifiants</h4>
+                        <form id="changeCredentialsForm">
+                            <label for="old_password">Ancien mot de passe:</label>
+                            <input type="password" id="old_password" required>
+                        </br></br>
+                            <label for="old_secret">Ancienne clé secrète:</label>
+                            <input type="password" id="old_secret" required>
+                        </br></br>
+                            <label for="new_password">Nouveau mot de passe:</label>
+                            <input type="password" id="new_password" required>
+                        </br></br>
+                            <label for="new_secret">Nouvelle clé secrète:</label>
+                            <input type="password" id="new_secret" required>
+                        </br>
+                            <button type="button" onclick="updateCredentials()">Sauvegarder</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
