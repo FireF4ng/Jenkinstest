@@ -35,3 +35,16 @@ init_db()
 
 if __name__ == "__main__":
     app.run(debug=True)  # Set debug to True for debugging
+
+
+"""TODO
+- Prof principal a classe
+- Finir toute pages secondaires
+- Tableau devoir a faire
+- Tableau agenda (classe, matiere, matiere-prof, debut, fin)
+- notes entre 1 et 20
+- pages secondaires enlever search, enlever info perso (mettre dans profil) fusioner notes et viescolaire
+- page communication = feedback normale
+- heder/footer generale en html different
+- enlever photo profil (mettre icone generale)
+"""
