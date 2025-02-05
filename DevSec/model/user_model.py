@@ -19,21 +19,20 @@ class Eleve(db.Model):
     prenom = db.Column(db.String(100), nullable=False)
     classe_id = db.Column(db.Integer, db.ForeignKey('classes.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
     mdp_hash = db.Column(db.String(255), nullable=False)
-    secret_key = db.Column(db.String(32), unique=True, nullable=False, default=lambda: secrets.token_hex(16))
     
     notes = db.relationship('Note', backref='eleve', lazy=True)
 
     def set_password(self, password):
-        """Hash the password using the secret key"""
+        """Hash the password"""
         salt = os.urandom(16)  # Generate a random salt
-        key = hashlib.pbkdf2_hmac('sha256', password.encode(), self.secret_key.encode() + salt, 100000)
+        key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
         self.mdp_hash = salt.hex() + key.hex()  # Store salt + hash
 
     def check_password(self, password):
         """Check if the password matches the stored hash"""
         salt = bytes.fromhex(self.mdp_hash[:32])  # Extract the salt
         stored_key = self.mdp_hash[32:]  # Extract the hashed password
-        test_key = hashlib.pbkdf2_hmac('sha256', password.encode(), self.secret_key.encode() + salt, 100000)
+        test_key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
         return test_key.hex() == stored_key  # Compare hashes
 
     def get_notes(self):
@@ -46,21 +45,20 @@ class Professeur(db.Model):
     nom = db.Column(db.String(100), nullable=False)
     prenom = db.Column(db.String(100), nullable=False)
     mdp_hash = db.Column(db.String(255), nullable=False)
-    secret_key = db.Column(db.String(32), unique=True, nullable=False, default=lambda: secrets.token_hex(16))
     
     profs_matieres = db.relationship('ProfMatiere', backref='professeur', lazy=True)
 
     def set_password(self, password):
-        """Hash the password using the secret key"""
+        """Hash the password"""
         salt = os.urandom(16)  
-        key = hashlib.pbkdf2_hmac('sha256', password.encode(), self.secret_key.encode() + salt, 100000)
+        key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
         self.mdp_hash = salt.hex() + key.hex()
 
     def check_password(self, password):
         """Check if the password matches the stored hash"""
         salt = bytes.fromhex(self.mdp_hash[:32])
         stored_key = self.mdp_hash[32:]
-        test_key = hashlib.pbkdf2_hmac('sha256', password.encode(), self.secret_key.encode() + salt, 100000)
+        test_key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
         return test_key.hex() == stored_key
 
 class Matiere(db.Model):
@@ -96,13 +94,12 @@ def add_admin_user():
                 nom='Admin', 
                 prenom='User', 
                 classe_id=1, 
-                secret_key="adminkey",
                 id=0
             )
-            admin.set_password("admin")  # Hash password with secret key
+            admin.set_password("admin")
             db.session.add(admin)
             db.session.commit()
-            print(f"Admin user created! Secret Key: {admin.secret_key}")
+            print("Admin user created!")
     except Exception as e:
         db.session.rollback()
         print(f"Error creating admin user: {str(e)}")
@@ -119,16 +116,16 @@ def create_samples():
                 # Create sample students
                 eleves = []
                 for i in range(1, 4):
-                    eleve = Eleve(username=f'eleve{i}', nom='Eleve', prenom=f'Num{i}', classe_id=classe1.id, secret_key=f'eleve{i}key')
-                    eleve.set_password(f'eleve{i}')  # Hash password with secret key
+                    eleve = Eleve(username=f'eleve{i}', nom='Eleve', prenom=f'Num{i}', classe_id=classe1.id)
+                    eleve.set_password(f'eleve{i}')
                     eleves.append(eleve)
                 db.session.bulk_save_objects(eleves)
 
-                # Create sample professors (Ensure secret key exists!)
+                # Create sample professors
                 profs = []
                 for i in range(1, 3):
-                    prof = Professeur(username=f'prof{i}', nom='Prof', prenom=f'Num{i}', secret_key=f'prof{i}key')  # Ensure secret key exists
-                    prof.set_password(f'prof{i}')  # Hash password with secret key
+                    prof = Professeur(username=f'prof{i}', nom='Prof', prenom=f'Num{i}')
+                    prof.set_password(f'prof{i}')
                     profs.append(prof)
                 db.session.bulk_save_objects(profs)
 

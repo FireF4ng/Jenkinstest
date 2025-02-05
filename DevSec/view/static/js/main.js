@@ -48,11 +48,9 @@ function closeParametersModal() {
 
 async function updateCredentials() {
     let oldPassword = document.getElementById("old_password").value;
-    let oldSecret = document.getElementById("old_secret").value;
     let newPassword = document.getElementById("new_password").value;
-    let newSecret = document.getElementById("new_secret").value;
 
-    if (!oldPassword || !oldSecret || !newPassword || !newSecret) {
+    if (!oldPassword || !newPassword) {
         alert("Tous les champs doivent être remplis.");
         return;
     }
@@ -62,9 +60,7 @@ async function updateCredentials() {
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
             old_password: oldPassword,
-            old_secret: oldSecret,
             new_password: newPassword,
-            new_secret: newSecret
         })
     });
 

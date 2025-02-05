@@ -20,12 +20,11 @@ def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        secret_key = request.form.get("secret_key")
 
         # Check if user exists in either Eleve or Professeur table
         user = Eleve.query.filter_by(username=username).first() or Professeur.query.filter_by(username=username).first()
         
-        if user and user.check_password(password) and user.secret_key == secret_key:
+        if user and user.check_password(password):
             session["user"] = user.id
             session["role"] = "eleve" if isinstance(user, Eleve) else "professeur"
             return redirect(url_for("main_controller.main_menu"))
@@ -307,22 +306,19 @@ def update_credentials():
 
     data = request.json
     old_password = data.get("old_password")
-    old_secret = data.get("old_secret")
     new_password = data.get("new_password")
-    new_secret = data.get("new_secret")
 
-    if not old_password or not old_secret or not new_password or not new_secret:
+    if not old_password or not new_password:
         return jsonify({"success": False, "error": "All fields are required"}), 400
 
     # Fetch the user by username (not id!)
     user = Eleve.query.filter_by(id=session["user"]).first() or Professeur.query.filter_by(id=session["user"]).first()
     
-    if not user or not user.check_password(old_password) or user.secret_key != old_secret:
+    if not user or not user.check_password(old_password):
         return jsonify({"success": False, "error": "Invalid current credentials"}), 400
 
-    # Update password and secret key
-    user.secret_key = new_secret  # Set the new secret key before hashing the new password
-    user.set_password(new_password)  # Hash password using new secret key
+    # Update password
+    user.set_password(new_password) 
     db.session.commit()
 
     return jsonify({"success": True, "message": "Credentials updated successfully"})
