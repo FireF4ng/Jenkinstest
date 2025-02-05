@@ -26,7 +26,7 @@ def login():
         user = Eleve.query.filter_by(username=username).first() or Professeur.query.filter_by(username=username).first()
         
         if user and user.check_password(password) and user.secret_key == secret_key:
-            session["user"] = user.username
+            session["user"] = user.id
             session["role"] = "eleve" if isinstance(user, Eleve) else "professeur"
             return redirect(url_for("main_controller.main_menu"))
         
@@ -45,13 +45,13 @@ def main_menu():
     if "user" not in session:
         return redirect(url_for("main_controller.login"))
     
-    if session["user"] == "admin":
+    if session["user"] == 0:
         return render_template("admin.html")
 
     role = session.get("role")
 
     if role == "eleve":
-        eleve = Eleve.query.filter_by(username=session["user"]).first()
+        eleve = Eleve.query.filter_by(id=session["user"]).first()
         notes = eleve.get_notes() if eleve else []
         agenda = [
             {"matiere": m.matiere, "debut": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}", "fin": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}", "prof": (Professeur.query.filter_by(id=pm.professeur_id).first().nom +' '+ Professeur.query.filter_by(id=pm.professeur_id).first().prenom) if pm else "Inconnu"} 
@@ -63,7 +63,7 @@ def main_menu():
         return render_template("main.html", role=role, eleve=eleve, notes=notes, agenda=agenda, devoirs=devoirs)
 
     elif role == "professeur":
-        professeur = Professeur.query.filter_by(username=session["user"]).first()
+        professeur = Professeur.query.filter_by(id=session["user"]).first()
         if not professeur:
             return redirect(url_for("main_controller.logout"))
 
@@ -106,7 +106,7 @@ def update_score():
 
 @main_controller.route("/admin/data")
 def admin_data():
-    if session.get("user") != "admin":
+    if session.get("user") != 0:
         return jsonify({"error": "Unauthorized"}), 403
     
     table = request.args.get("table")
@@ -165,7 +165,7 @@ def admin_data():
 
 @main_controller.route("/admin/form")
 def admin_form():
-    if session.get("user") != "admin":
+    if session.get("user") != 0:
         return jsonify({"error": "Unauthorized"}), 403
     
     table = request.args.get("table")
@@ -217,6 +217,15 @@ def update_entry():
 
     for key, value in updates.items():
         if hasattr(entry, key):
+            column_type = getattr(model, key).property.columns[0].type
+
+            # Convert string to date if the column is a Date type
+            if isinstance(column_type, db.Date):
+                try:
+                    value = datetime.strptime(value, "%Y-%m-%d").date()  # Ensure proper format
+                except ValueError:
+                    return jsonify({"success": False, "error": f"Invalid date format for {key}"}), 400
+
             setattr(entry, key, value)
 
     try:
@@ -263,7 +272,7 @@ def add_entry():
 
 @main_controller.route("/admin/delete", methods=["POST"])
 def admin_delete():
-    if session.get("user") != "admin":
+    if session.get("user") != 0:
         return jsonify({"error": "Unauthorized"}), 403
     
     data = request.json
@@ -305,14 +314,15 @@ def update_credentials():
     if not old_password or not old_secret or not new_password or not new_secret:
         return jsonify({"success": False, "error": "All fields are required"}), 400
 
-    user = Eleve.query.filter_by(username=session["user"]).first() or Professeur.query.filter_by(username=session["user"]).first()
+    # Fetch the user by username (not id!)
+    user = Eleve.query.filter_by(id=session["user"]).first() or Professeur.query.filter_by(id=session["user"]).first()
     
-    if not user or not check_password_hash(user.mdp, old_password) or user.secret_key != old_secret:
+    if not user or not user.check_password(old_password) or user.secret_key != old_secret:
         return jsonify({"success": False, "error": "Invalid current credentials"}), 400
 
-    # Update credentials
-    user.mdp = generate_password_hash(new_password)
-    user.secret_key = new_secret  # Ensure new secret is unique
+    # Update password and secret key
+    user.secret_key = new_secret  # Set the new secret key before hashing the new password
+    user.set_password(new_password)  # Hash password using new secret key
     db.session.commit()
 
     return jsonify({"success": True, "message": "Credentials updated successfully"})

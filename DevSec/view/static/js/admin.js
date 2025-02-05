@@ -150,7 +150,18 @@ async function addEntry(table) {
 async function updateEntry(table, id) {
     const form = document.getElementById(`edit-form-${table}`);
     const formData = new FormData(form);
-    const updates = Object.fromEntries(formData.entries());
+    let updates = Object.fromEntries(formData.entries());
+
+    // Convert date fields to YYYY-MM-DD
+    for (let key in updates) {
+        let inputElement = form.querySelector(`[name="${key}"]`);
+        if (inputElement && inputElement.type === "date") {
+            let dateValue = inputElement.value;
+            if (dateValue) {
+                updates[key] = new Date(dateValue).toISOString().split("T")[0];  // Ensure correct format
+            }
+        }
+    }
 
     const response = await fetch('/admin/update', {
         method: 'POST',

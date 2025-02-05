@@ -36,6 +36,9 @@ class Eleve(db.Model):
         test_key = hashlib.pbkdf2_hmac('sha256', password.encode(), self.secret_key.encode() + salt, 100000)
         return test_key.hex() == stored_key  # Compare hashes
 
+    def get_notes(self):
+        return Note.query.filter_by(eleve_id=self.id).all()
+
 class Professeur(db.Model):
     __tablename__ = 'professeurs'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -93,7 +96,8 @@ def add_admin_user():
                 nom='Admin', 
                 prenom='User', 
                 classe_id=1, 
-                secret_key="adminkey"  # Fixed secret key for admin
+                secret_key="adminkey",
+                id=0
             )
             admin.set_password("admin")  # Hash password with secret key
             db.session.add(admin)
@@ -105,9 +109,8 @@ def add_admin_user():
 
 def create_samples():
     try:
-        with db.session.no_autoflush:  # Prevents issues with foreign key constraints
-            # Ensure we only create samples if no users exist
-            if Eleve.query.count() == 0 and Professeur.query.count() == 0:
+        if not Eleve.query.filter_by(id=1).first() or not Professeur.query.filter_by(id=1).first():
+            with db.session.no_autoflush:  # Prevents issues with foreign key constraints
                 # Create sample class
                 classe1 = Classe(nom="Classe 1")
                 db.session.add(classe1)
@@ -116,19 +119,17 @@ def create_samples():
                 # Create sample students
                 eleves = []
                 for i in range(1, 4):
-                    eleve = Eleve(username=f'eleve{i}', nom='Eleve', prenom=f'Num{i}', classe_id=classe1.id)
+                    eleve = Eleve(username=f'eleve{i}', nom='Eleve', prenom=f'Num{i}', classe_id=classe1.id, secret_key=f'eleve{i}key')
                     eleve.set_password(f'eleve{i}')  # Hash password with secret key
                     eleves.append(eleve)
-
                 db.session.bulk_save_objects(eleves)
 
-                # Create sample professors
+                # Create sample professors (Ensure secret key exists!)
                 profs = []
                 for i in range(1, 3):
-                    prof = Professeur(username=f'prof{i}', nom='Prof', prenom=f'Num{i}')
+                    prof = Professeur(username=f'prof{i}', nom='Prof', prenom=f'Num{i}', secret_key=f'prof{i}key')  # Ensure secret key exists
                     prof.set_password(f'prof{i}')  # Hash password with secret key
                     profs.append(prof)
-
                 db.session.bulk_save_objects(profs)
 
                 # Create sample subjects
@@ -146,9 +147,7 @@ def create_samples():
                     Note(note=15, date=datetime.utcnow().date(), matiere_id=1, eleve_id=2)
                 ]
                 db.session.bulk_save_objects(notes)
-
                 db.session.commit()  # Final commit for all data
-
                 print("Sample data created successfully!")
     except Exception as e:
         db.session.rollback()
