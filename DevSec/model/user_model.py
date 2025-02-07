@@ -1,15 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime  # Import date from datetime module
 from db.db import db
-import secrets
 import hashlib
 import os
-
-class Classe(db.Model):
-    __tablename__ = 'classes'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    nom = db.Column(db.String(100), nullable=False)
-    eleves = db.relationship('Eleve', backref='classe', lazy=True)
 
 class Eleve(db.Model):
     __tablename__ = 'eleves'
@@ -60,6 +53,13 @@ class Professeur(db.Model):
         stored_key = self.mdp_hash[32:]
         test_key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
         return test_key.hex() == stored_key
+    
+class Classe(db.Model):
+    __tablename__ = 'classes'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nom = db.Column(db.String(100), nullable=False)
+    eleves = db.relationship('Eleve', backref='classe', lazy=True)
+    prof_principal = db.Column(db.Integer, db.ForeignKey('professeurs.id', ondelete='RESTRICT', onupdate='RESTRICT'))
 
 class Matiere(db.Model):
     __tablename__ = 'matieres'
@@ -72,9 +72,13 @@ class Note(db.Model):
     __tablename__ = 'notes'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     note = db.Column(db.Integer, nullable=False)
-    date = db.Column(db.Date, nullable=False, default=datetime.utcnow().date)  # Ensure default value is a date object
+    date = db.Column(db.Date, nullable=False, default=datetime.utcnow().date)
     matiere_id = db.Column(db.Integer, db.ForeignKey('matieres.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
     eleve_id = db.Column(db.Integer, db.ForeignKey('eleves.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+
+    __table_args__ = (
+        db.CheckConstraint('note BETWEEN 0 AND 20', name='check_note_range'),
+    )
 
     def __repr__(self):
         return f"<Note {self.note}>"
@@ -108,12 +112,11 @@ def create_samples():
     try:
         if not Eleve.query.filter_by(id=1).first() or not Professeur.query.filter_by(id=1).first():
             with db.session.no_autoflush:  # Prevents issues with foreign key constraints
-                # Create sample class
-                classe1 = Classe(nom="Classe 1")
-                db.session.add(classe1)
-                db.session.commit()  # Commit the class so foreign key references work
 
-                # Create sample students
+                classe1 = Classe(nom="Classe 1", prof_principal=1)
+                db.session.add(classe1)
+                db.session.commit()
+
                 eleves = []
                 for i in range(1, 4):
                     eleve = Eleve(username=f'eleve{i}', nom='Eleve', prenom=f'Num{i}', classe_id=classe1.id)
@@ -121,7 +124,6 @@ def create_samples():
                     eleves.append(eleve)
                 db.session.bulk_save_objects(eleves)
 
-                # Create sample professors
                 profs = []
                 for i in range(1, 3):
                     prof = Professeur(username=f'prof{i}', nom='Prof', prenom=f'Num{i}')
@@ -129,7 +131,6 @@ def create_samples():
                     profs.append(prof)
                 db.session.bulk_save_objects(profs)
 
-                # Create sample subjects
                 matieres = [
                     Matiere(matiere='Maths'),
                     Matiere(matiere='Francais')
@@ -137,7 +138,6 @@ def create_samples():
                 db.session.bulk_save_objects(matieres)
                 db.session.commit()  # Commit subjects before assigning notes
 
-                # Assign random notes to students
                 notes = [
                     Note(note=10, date=datetime.utcnow().date(), matiere_id=1, eleve_id=1),
                     Note(note=12, date=datetime.utcnow().date(), matiere_id=2, eleve_id=1),

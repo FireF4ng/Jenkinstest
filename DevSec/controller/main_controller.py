@@ -3,7 +3,8 @@ from model.user_model import Eleve, Professeur, Note, Classe, Matiere, ProfMatie
 from flask import Blueprint
 import random
 from datetime import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
+import time
+
 
 main_controller = Blueprint("main_controller", __name__)
 
@@ -30,6 +31,7 @@ def login():
             return redirect(url_for("main_controller.main_menu"))
         
         message = "Identifiants incorrects"
+        time.sleep(2)
     
     return render_template("login.html", message=message)
 
@@ -94,14 +96,16 @@ def update_score():
 
     note_id = request.form.get("note_id")
     new_score = request.form.get("new_score")
-
+    if not 0 < int(new_score) < 20:
+        return jsonify({"error": "Note Invalide"}), 400
+    
     note = Note.query.get(note_id)
     if note:
         note.note = new_score
         db.session.commit()
         return jsonify({"success": True, "new_score": new_score})
 
-    return jsonify({"error": "Note not found"}), 404
+    return jsonify({"error": "Note pas trouvee"}), 404
 
 @main_controller.route("/admin/data")
 def admin_data():
@@ -312,7 +316,10 @@ def update_credentials():
         return jsonify({"success": False, "error": "All fields are required"}), 400
 
     # Fetch the user by username (not id!)
-    user = Eleve.query.filter_by(id=session["user"]).first() or Professeur.query.filter_by(id=session["user"]).first()
+    if session["role"] == "eleve":
+        user = Eleve.query.filter_by(id=session["user"]).first()
+    else:
+        user = Professeur.query.filter_by(id=session["user"]).first()
     
     if not user or not user.check_password(old_password):
         return jsonify({"success": False, "error": "Invalid current credentials"}), 400

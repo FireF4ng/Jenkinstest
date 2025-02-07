@@ -38,13 +38,8 @@ if __name__ == "__main__":
 
 
 """TODO
-- Prof principal a classe
-- Finir toute pages secondaires
 - Tableau devoir a faire
 - Tableau agenda (classe, matiere, matiere-prof, debut, fin)
-- notes entre 1 et 20
-- pages secondaires enlever search, enlever info perso (mettre dans profil) fusioner notes et viescolaire
+- Finir toute pages secondaires
 - page communication = feedback normale
-- heder/footer generale en html different
-- enlever photo profil (mettre icone generale)
 """
