@@ -15,7 +15,7 @@ def home():
 
 @main_controller.route("/login", methods=["GET", "POST"])
 def login():
-    message = "Veuillez entrer votre identifiant, mot de passe et clé secrète"
+    message = "Veuillez entrer votre identifiant et mot de passe"
     
     if request.method == "POST":
         username = request.form.get("username")
@@ -29,7 +29,7 @@ def login():
             session["role"] = "eleve" if isinstance(user, Eleve) else "professeur"
             return redirect(url_for("main_controller.main_menu"))
         
-        message = "Identifiants incorrects ou clé secrète invalide"
+        message = "Identifiants incorrects"
     
     return render_template("login.html", message=message)
 
