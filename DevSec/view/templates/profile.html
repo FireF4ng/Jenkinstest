@@ -18,6 +18,7 @@
 
                     {% elif role == "professeur" %}
                         <p><strong>Nom:</strong> {{ user.nom }} {{ user.prenom }}</p>
+                        <p><strong>Prof Principal:</strong> {{ classe.nom }}</p>
                         <h4>📚 Matières enseignées</h4>
                         <ul>
                             {% for matiere in matieres %}

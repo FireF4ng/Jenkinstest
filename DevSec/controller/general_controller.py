@@ -84,12 +84,12 @@ def cahier_de_texte():
     # Fetch agenda for the student's class or professor's subjects
     if role == "eleve":
         eleve = Eleve.query.get(session["user"])
-        agenda = Agenda.query.filter_by(classe_id=eleve.classe_id).all()
-        devoirs = Devoir.query.filter(Devoir.matiere_id.in_([m.id for m in Matiere.query.all()])).all()
+        agenda = Agenda.query.filter_by(classe_id=eleve.classe_id).join(Matiere).join(Professeur).join(Classe).all()
+        devoirs = Devoir.query.filter(Devoir.matiere_id.in_([m.id for m in Matiere.query.all()])).join(Matiere).all()
     else:
         professeur = Professeur.query.get(session["user"])
-        agenda = Agenda.query.filter_by(professeur_id=professeur.id).all()
-        devoirs = Devoir.query.filter_by(professeur_id=professeur.id).all()
+        agenda = Agenda.query.filter_by(professeur_id=professeur.id).join(Matiere).join(Professeur).join(Classe).all()
+        devoirs = Devoir.query.filter_by(professeur_id=professeur.id).join(Matiere).all()
 
     return render_template("cahier_de_texte.html", role=role, agenda=agenda, devoirs=devoirs)
 
@@ -103,7 +103,7 @@ def vie_scolaire():
     eleve = Eleve.query.get(session["user"]) if role == "eleve" else None
     professeur = Professeur.query.get(session["user"]) if role == "professeur" else None
     prof_principal = Professeur.query.get(eleve.classe.prof_principal) if role == "eleve" else None
-    classe_mates = Eleve.query.filter_by(classe_id=eleve.classe_id).all() if role == "eleve" else []
+    classe_mates = Eleve.query.filter_by(classe_id=eleve.classe_id).all() if role == "eleve" else Eleve.query.join(Classe).filter(Classe.prof_principal == professeur.id).all()
     notes = Note.query.filter_by(eleve_id=session["user"]).join(Matiere).all() if role == "eleve" else Note.query.all()
 
     return render_template("vie_scolaire.html", role=role, eleve=eleve, professeur=professeur, classe_mates=classe_mates, prof_principal=prof_principal, notes=notes)
@@ -116,7 +116,7 @@ def profile():
 
     role = session.get("role")
     user = Eleve.query.get(session["user"]) if role == "eleve" else Professeur.query.get(session["user"])
-    classe = Classe.query.get(user.classe_id) if role == "eleve" else None
+    classe = Classe.query.get(user.classe_id) if role == "eleve" else Classe.query.filter_by(prof_principal=user.id).first()
     professeurs = ProfMatiere.query.filter(ProfMatiere.matiere_id.in_([note.matiere_id for note in user.notes])).all() if role == "eleve" else None
     matieres = ProfMatiere.query.filter_by(professeur_id=user.id).all() if role == "professeur" else None
 

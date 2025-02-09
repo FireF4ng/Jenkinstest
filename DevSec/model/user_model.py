@@ -101,6 +101,8 @@ class Devoir(db.Model):
     professeur_id = db.Column(db.Integer, db.ForeignKey('professeurs.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
     contenu = db.Column(db.Text, nullable=False)
 
+    matiere = db.relationship('Matiere', backref='devoir', lazy=True)
+
 class Agenda(db.Model):
     __tablename__ = 'agenda'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -109,6 +111,10 @@ class Agenda(db.Model):
     professeur_id = db.Column(db.Integer, db.ForeignKey('professeurs.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
     debut = db.Column(db.String(10), nullable=False)
     fin = db.Column(db.String(10), nullable=False)
+
+    matiere = db.relationship('Matiere', backref='agenda', lazy=True)
+    professeur = db.relationship('Professeur', backref='agenda', lazy=True)
+    classe = db.relationship('Classe', backref='agenda', lazy=True)
 
 class Feedback(db.Model):
     __tablename__ = 'feedback'
@@ -125,7 +131,7 @@ def add_admin_user():
                 username='admin', 
                 nom='Admin', 
                 prenom='User', 
-                classe_id=1, 
+                classe_id=0, 
                 id=0
             )
             admin.set_password("admin")
