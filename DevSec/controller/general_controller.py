@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, session, redirect, url_for, jsonify, request
 from model.user_model import *
-from model.user_model import db
 import random
 
 general_controller = Blueprint("general_controller", __name__)
@@ -152,12 +151,12 @@ def update_credentials():
     if not old_password or not new_password:
         return jsonify({"success": False, "error": "All fields are required"}), 400
 
-    user = Eleve.query.filter_by(id=session["user"]).first() or Professeur.query.filter_by(id=session["user"]).first()
+    user = Eleve.query.get(session["user"]) or Professeur.query.get(session["user"])
 
     if not user or not user.check_password(old_password):
         return jsonify({"success": False, "error": "Invalid current credentials"}), 400
 
-    user.set_password(new_password) 
+    user.set_password(new_password)
     db.session.commit()
 
     return jsonify({"success": True, "message": "Credentials updated successfully"})

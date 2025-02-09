@@ -116,19 +116,19 @@ def update_entry():
         if hasattr(entry, key):
             column_type = getattr(table_list, key).property.columns[0].type
 
-            # Convert string to date if the column is a Date type
             if isinstance(column_type, db.Date):
                 try:
-                    value = datetime.strptime(value, "%Y-%m-%d").date()  # Ensure proper format
+                    value = datetime.strptime(value, "%Y-%m-%d").date()
                 except ValueError:
                     return jsonify({"success": False, "error": f"Invalid date format for {key}"}), 400
 
             if key == "mdp_hash":
-                if session.get("role") == "eleve":
-                    value = Eleve.set_password(value)
-                elif session.get("role") == "professeur":
-                    value = Professeur.set_password(value)
-            setattr(entry, key, value)
+                if isinstance(entry, Eleve) or isinstance(entry, Professeur):
+                    entry.set_password(value)
+                else:
+                    return jsonify({"success": False, "error": "Cannot update password for this entry"}), 400
+            else:
+                setattr(entry, key, value)
 
     try:
         db.session.commit()

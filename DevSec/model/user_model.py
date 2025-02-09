@@ -22,10 +22,16 @@ class Eleve(db.Model):
 
     def check_password(self, password):
         """Check if the password matches the stored hash"""
-        salt = bytes.fromhex(self.mdp_hash[:32])  # Extract the salt
-        stored_key = self.mdp_hash[32:]  # Extract the hashed password
-        test_key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
-        return test_key.hex() == stored_key  # Compare hashes
+        if not self.mdp_hash or len(self.mdp_hash) < 64:
+            return False
+        
+        try:
+            salt = bytes.fromhex(self.mdp_hash[:32])
+            stored_key = self.mdp_hash[32:]
+            test_key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
+            return test_key.hex() == stored_key
+        except ValueError:
+            return False
 
     def get_notes(self):
         return Note.query.filter_by(eleve_id=self.id).all()
