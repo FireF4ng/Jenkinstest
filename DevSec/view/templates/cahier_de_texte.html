@@ -1,28 +1,42 @@
 {% include 'header.html' %}
 <body>
-</br>
-    <div class="container mt-5">
-        <h3>Mon Cahier de Texte</h3>
+    <div class="container-fluid mt-5 pt-5">
         <div class="row">
+            <!-- 📅 Left Column - Agenda -->
             <div class="col-md-6">
                 <div class="box p-3">
-                    <h4>Agenda</h4>
-                    {% for cours in agenda %}
-                        <div class="agenda-item">
-                            <strong>{{ cours.matiere }}</strong> avec {{ cours.prof }}
-                            <small class="text-muted">{{ cours.debut }} - {{ cours.fin }}</small>
-                        </div>
-                    {% endfor %}
+                    <h4 class="mb-4">📅 Agenda</h4>
+                    {% if agenda %}
+                        {% for cours in agenda %}
+                            <div class="agenda-item p-2 mb-2">
+                                {% if role == "eleve" %}
+                                    <strong>{{ cours.matiere }}</strong> avec {{ cours.prof }}<br>
+                                    <small class="text-muted">{{ cours.debut }} - {{ cours.fin }}</small>
+                                {% elif role == "professeur" %}
+                                    <strong>{{ cours.matiere }}</strong> (Classe: {{ cours.classe }})<br>
+                                    <small class="text-muted">{{ cours.debut }} - {{ cours.fin }}</small>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-muted">Aucun cours prévu</div>
+                    {% endif %}
                 </div>
             </div>
+
+            <!-- 📖 Right Column - Travail à faire -->
             <div class="col-md-6">
-                <div class="box p-3">
-                    <h4>Travail à faire</h4>
-                    {% for devoir in devoirs %}
-                        <div class="devoir-item">
-                            <strong>{{ devoir.matiere }}</strong>: {{ devoir.contenu }}
-                        </div>
-                    {% endfor %}
+                <div class="box_devoir p-3">
+                    <h4 class="text-center mb-3"><strong>📖 Travail à faire</strong></h4>
+                    {% if devoirs %}
+                        {% for devoir in devoirs %}
+                            <div class="devoir-item p-2 mb-2">
+                                <strong>{{ devoir.matiere }}</strong>: {{ devoir.contenu }}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-muted">Aucun travail à afficher</div>
+                    {% endif %}
                 </div>
             </div>
         </div>

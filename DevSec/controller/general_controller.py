@@ -81,26 +81,19 @@ def cahier_de_texte():
         return redirect(url_for("auth_controller.login"))
 
     role = session.get("role")
+    eleve = Eleve.query.get(session["user"]) if role == "eleve" else None
+    professeur = Professeur.query.get(session["user"]) if role == "professeur" else None
+    agenda = [
+        {"matiere": "Maths", "prof": "M. Dupont", "debut": "8H30", "fin": "9H30"},
+        {"matiere": "Histoire", "prof": "Mme Lefevre", "debut": "10H00", "fin": "11H00"},
+    ]
+    devoirs = [
+        {"matiere": "Maths", "contenu": "Exercices 3, 4 et 5 page 42"},
+        {"matiere": "Histoire", "contenu": "Lire le chapitre sur la Révolution"},
+    ]
+    classes = Classe.query.all() if role == "professeur" else []
 
-    if role == "eleve":
-        eleve = Eleve.query.get(session["user"])
-        agenda = [
-            {"matiere": "Maths", "prof": "M. Dupont", "debut": "8H30", "fin": "9H30"},
-            {"matiere": "Histoire", "prof": "Mme Lefevre", "debut": "10H00", "fin": "11H00"},
-        ]
-        devoirs = [
-            {"matiere": "Maths", "contenu": "Exercices 3, 4 et 5 page 42"},
-            {"matiere": "Histoire", "contenu": "Lire le chapitre sur la Révolution"},
-        ]
-        return render_template("cahier_de_texte_eleve.html", role=role, agenda=agenda, devoirs=devoirs, eleve=eleve)
-
-    elif role == "professeur":
-        professeur = Professeur.query.get(session["user"])
-        classes = Classe.query.all()
-        return render_template("cahier_de_texte_prof.html", role=role, professeur=professeur, classes=classes)
-
-    return redirect(url_for("auth_controller.logout"))
-
+    return render_template("cahier_de_texte.html", role=role, eleve=eleve, professeur=professeur, agenda=agenda, devoirs=devoirs, classes=classes)
 
 @general_controller.route("/vie_scolaire")
 def vie_scolaire():
@@ -109,21 +102,13 @@ def vie_scolaire():
         return redirect(url_for("auth_controller.login"))
 
     role = session.get("role")
+    eleve = Eleve.query.get(session["user"]) if role == "eleve" else None
+    professeur = Professeur.query.get(session["user"]) if role == "professeur" else None
+    prof_principal = Professeur.query.get(eleve.classe.prof_principal) if role == "eleve" else None
+    classe_mates = Eleve.query.filter_by(classe_id=eleve.classe_id).all() if role == "eleve" else []
+    notes = Note.query.filter_by(eleve_id=session["user"]).join(Matiere).all() if role == "eleve" else Note.query.all()
 
-    if role == "eleve":
-        eleve = Eleve.query.get(session["user"])
-        prof_principal = Professeur.query.get(eleve.classe.prof_principal)
-        notes = Note.query.filter_by(eleve_id=session["user"]).join(Matiere).all()
-        return render_template("vie_scolaire_eleve.html", role=role, eleve=eleve, notes=notes, prof_principal=prof_principal)
-
-    elif role == "professeur":
-        professeur = Professeur.query.get(session["user"])
-        students = Eleve.query.filter_by(classe_id=session["user"]).all()
-        notes = Note.query.all()
-        return render_template("vie_scolaire_prof.html", role=role, professeur=professeur, students=students, notes=notes)
-
-    return redirect(url_for("auth_controller.logout"))
-
+    return render_template("vie_scolaire.html", role=role, eleve=eleve, professeur=professeur, classe_mates=classe_mates, prof_principal=prof_principal, notes=notes)
 
 @general_controller.route("/profile")
 def profile():
@@ -132,19 +117,12 @@ def profile():
         return redirect(url_for("auth_controller.login"))
 
     role = session.get("role")
+    user = Eleve.query.get(session["user"]) if role == "eleve" else Professeur.query.get(session["user"])
+    classe = Classe.query.get(user.classe_id) if role == "eleve" else None
+    professeurs = ProfMatiere.query.filter(ProfMatiere.matiere_id.in_([note.matiere_id for note in user.notes])).all() if role == "eleve" else None
+    matieres = ProfMatiere.query.filter_by(professeur_id=user.id).all() if role == "professeur" else None
 
-    if role == "eleve":
-        eleve = Eleve.query.get(session["user"])
-        classe = Classe.query.get(eleve.classe_id)
-        professeurs = ProfMatiere.query.filter(ProfMatiere.matiere_id.in_([note.matiere_id for note in eleve.notes])).all()
-        return render_template("profile_eleve.html", role=role, eleve=eleve, classe=classe, professeurs=professeurs)
-
-    elif role == "professeur":
-        professeur = Professeur.query.get(session["user"])
-        matieres = ProfMatiere.query.filter_by(professeur_id=professeur.id).all()
-        return render_template("profile_prof.html", role=role, professeur=professeur, matieres=matieres)
-
-    return redirect(url_for("auth_controller.logout"))
+    return render_template("profile.html", role=role, user=user, classe=classe, professeurs=professeurs, matieres=matieres)
 
 
 @general_controller.route("/communication")

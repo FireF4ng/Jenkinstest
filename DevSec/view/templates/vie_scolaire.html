@@ -1,33 +1,50 @@
 {% include 'header.html' %}
 <body>
-    <div class="container mt-5">
+    <div class="container-fluid mt-5 pt-5">
         <div class="row">
+            <!-- 👨‍🏫 Left Column - Prof Principal (Students for Professors) -->
             <div class="col-md-4">
                 <div class="box p-3">
-                    <h4>Élèves de la Classe</h4>
-                    <p><strong>Professeur Principal:</strong> {{ prof_principal.nom }} {{ prof_principal.prenom }}</p>
-                    <ul>
-                        {% for eleve in classe_mates %}
-                            <li>{{ eleve.nom }} {{ eleve.prenom }}</li>
+                    <h4 class="mb-4">👨‍🏫 Vie Scolaire</h4>
+                    
+                    {% if role == "eleve" %}
+                        <p><strong>Professeur Principal:</strong> {{ prof_principal.nom }} {{ prof_principal.prenom }}</p>
+                    {% elif role == "professeur" %}
+                        <h5>📋 Liste des Étudiants</h5>
+                        <ul>
+                            {% for student in classe_mates %}
+                                <li>{{ student.nom }} {{ student.prenom }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 📊 Middle Column - Notes -->
+            <div class="col-md-4">
+                <div class="box p-3">
+                    <h4>📊 Notes</h4>
+                    {% if role == "eleve" %}
+                        {% for note in notes %}
+                            <div class="note-item p-2">
+                                <strong>{{ note.matiere.matiere }}</strong>: {{ note.note }} ({{ note.date }})
+                            </div>
                         {% endfor %}
-                    </ul>
+                    {% elif role == "professeur" %}
+                        {% for note in notes %}
+                            <div class="note-item p-2">
+                                <strong>{{ note.eleve.nom }} {{ note.eleve.prenom }}</strong> - {{ note.matiere.matiere }}: {{ note.note }} ({{ note.date }})
+                            </div>
+                        {% endfor %}
+                    {% endif %}
                 </div>
             </div>
+
+            <!-- 📂 Right Column - Documents -->
             <div class="col-md-4">
                 <div class="box p-3">
-                    <h4>Notes</h4>
-                    {% for note in notes %}
-                        <div class="note-item">
-                            <strong>{{ note.eleve.nom }} {{ note.eleve.prenom }}</strong> - {{ note.matiere.matiere }}:
-                            <span>{{ note.note }}</span> ({{ note.date }})
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="box p-3">
-                    <h4>Documents</h4>
-                    <p class="text-muted">Aucun document disponible</p>
+                    <h5>📂 Documents</h5>
+                    <div class="text-muted">Aucun document disponible</div>
                 </div>
             </div>
         </div>
