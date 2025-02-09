@@ -1,0 +1,37 @@
+{% include 'header.html' %}
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="box p-3">
+                    <h4>Élèves de la Classe</h4>
+                    <p><strong>Professeur Principal:</strong> {{ prof_principal.nom }} {{ prof_principal.prenom }}</p>
+                    <ul>
+                        {% for eleve in classe_mates %}
+                            <li>{{ eleve.nom }} {{ eleve.prenom }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="box p-3">
+                    <h4>Notes</h4>
+                    {% for note in notes %}
+                        <div class="note-item">
+                            <strong>{{ note.eleve.nom }} {{ note.eleve.prenom }}</strong> - {{ note.matiere.matiere }}:
+                            <span>{{ note.note }}</span> ({{ note.date }})
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="box p-3">
+                    <h4>Documents</h4>
+                    <p class="text-muted">Aucun document disponible</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'footer.html' %}
+</body>
+</html>

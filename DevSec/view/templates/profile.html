@@ -1,0 +1,19 @@
+{% include 'header.html' %}
+<body>
+    <div class="container mt-5">
+        <h3>Mon Profil</h3>
+        <p><strong>Nom:</strong> {{ user.nom }} {{ user.prenom }}</p>
+        {% if role == "eleve" %}
+            <p><strong>Classe:</strong> {{ classe.nom }}</p>
+        {% elif role == "professeur" %}
+            <h4>Mes matières enseignées</h4>
+            <ul>
+                {% for prof_matiere in profs %}
+                    <li>{{ prof_matiere.matiere.matiere }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    {% include 'footer.html' %}
+</body>
+</html>

@@ -1,113 +1,18 @@
-from flask import render_template, redirect, url_for, session, request, jsonify
-from model.user_model import Eleve, Professeur, Note, Classe, Matiere, ProfMatiere, db
-from flask import Blueprint
-import random
+from flask import Blueprint, request, session, jsonify, redirect, url_for, render_template
+from model.user_model import Eleve, Professeur, Matiere, Note, Classe, ProfMatiere, db
 from datetime import datetime
-import time
 
+admin_controller = Blueprint("admin_controller", __name__)
 
-main_controller = Blueprint("main_controller", __name__)
-
-@main_controller.route("/")
-def home():
-    if "user" in session:
-        return redirect(url_for("main_controller.main_menu"))
-    return redirect(url_for("main_controller.login"))
-
-@main_controller.route("/login", methods=["GET", "POST"])
-def login():
-    message = "Veuillez entrer votre identifiant et mot de passe"
+@admin_controller.route("/admin")
+def admin_dashboard():
+    """Renders the admin dashboard."""
+    if session.get("user") != 0:  # Ensures only admin has access
+        return redirect(url_for("auth_controller.login"))
     
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+    return render_template("admin.html")
 
-        # Check if user exists in either Eleve or Professeur table
-        user = Eleve.query.filter_by(username=username).first() or Professeur.query.filter_by(username=username).first()
-        
-        if user and user.check_password(password):
-            session["user"] = user.id
-            session["role"] = "eleve" if isinstance(user, Eleve) else "professeur"
-            return redirect(url_for("main_controller.main_menu"))
-        
-        message = "Identifiants incorrects"
-        time.sleep(2)
-    
-    return render_template("login.html", message=message)
-
-@main_controller.route("/logout")
-def logout():
-    session.pop("user", None)
-    session.pop("role", None)
-    return redirect(url_for("main_controller.login"))
-
-@main_controller.route("/main_menu")
-def main_menu():
-    if "user" not in session:
-        return redirect(url_for("main_controller.login"))
-    
-    if session["user"] == 0:
-        return render_template("admin.html")
-
-    role = session.get("role")
-
-    if role == "eleve":
-        eleve = Eleve.query.filter_by(id=session["user"]).first()
-        notes = eleve.get_notes() if eleve else []
-        agenda = [
-            {"matiere": m.matiere, "debut": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}", "fin": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}", "prof": (Professeur.query.filter_by(id=pm.professeur_id).first().nom +' '+ Professeur.query.filter_by(id=pm.professeur_id).first().prenom) if pm else "Inconnu"} 
-            for pm in ProfMatiere.query.all() for m in Matiere.query.filter_by(id=pm.matiere_id).all()
-        ]
-        devoirs = [
-            {"matiere": m.matiere, "contenu": "Exercice aléatoire"} for m in Matiere.query.all()
-        ]
-        return render_template("main.html", role=role, eleve=eleve, notes=notes, agenda=agenda, devoirs=devoirs)
-
-    elif role == "professeur":
-        professeur = Professeur.query.filter_by(id=session["user"]).first()
-        if not professeur:
-            return redirect(url_for("main_controller.logout"))
-
-        last_notes = (
-            Note.query
-            .join(Eleve)
-            .join(ProfMatiere, ProfMatiere.matiere_id == Note.matiere_id)
-            .filter(ProfMatiere.professeur_id == professeur.id)
-            .order_by(Note.date.desc())
-            .limit(5)
-            .all()
-        )
-        agenda = [
-            {"classe": c.nom, "matiere": m.matiere, "debut": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}", "fin": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}"} 
-            for c in Classe.query.all() for m in Matiere.query.all()
-        ]
-        devoirs = [
-            {"classe": c.nom, "matiere": m.matiere, "contenu": "Devoir aléatoire"} 
-            for c in Classe.query.all() for m in Matiere.query.all()
-        ]
-        return render_template("main.html", role=role, professeur=professeur, last_notes=last_notes, agenda=agenda, devoirs=devoirs)
-
-    return redirect(url_for("main_controller.logout"))
-
-@main_controller.route("/update_score", methods=["POST"])
-def update_score():
-    if "user" not in session or session.get("role") != "professeur":
-        return jsonify({"error": "Unauthorized"}), 403
-
-    note_id = request.form.get("note_id")
-    new_score = request.form.get("new_score")
-    if not 0 < int(new_score) < 20:
-        return jsonify({"error": "Note Invalide"}), 400
-    
-    note = Note.query.get(note_id)
-    if note:
-        note.note = new_score
-        db.session.commit()
-        return jsonify({"success": True, "new_score": new_score})
-
-    return jsonify({"error": "Note pas trouvee"}), 404
-
-@main_controller.route("/admin/data")
+@admin_controller.route("/admin/data")
 def admin_data():
     if session.get("user") != 0:
         return jsonify({"error": "Unauthorized"}), 403
@@ -166,7 +71,7 @@ def admin_data():
 
     return jsonify({"success": True, "entries": result})
 
-@main_controller.route("/admin/form")
+@admin_controller.route("/admin/form")
 def admin_form():
     if session.get("user") != 0:
         return jsonify({"error": "Unauthorized"}), 403
@@ -189,7 +94,7 @@ def admin_form():
     return jsonify(fields)
 
 
-@main_controller.route("/admin/update", methods=["POST"])
+@admin_controller.route("/admin/update", methods=["POST"])
 def update_entry():
     data = request.json
     table = data.get("table")
@@ -240,7 +145,7 @@ def update_entry():
 
 
 
-@main_controller.route("/admin/add", methods=["POST"])
+@admin_controller.route("/admin/add", methods=["POST"])
 def add_entry():
     data = request.json
     table = data.get("table")
@@ -273,7 +178,7 @@ def add_entry():
     db.session.commit()
     return jsonify({"success": True, "message": "Entry added successfully"})
 
-@main_controller.route("/admin/delete", methods=["POST"])
+@admin_controller.route("/admin/delete", methods=["POST"])
 def admin_delete():
     if session.get("user") != 0:
         return jsonify({"error": "Unauthorized"}), 403
@@ -302,30 +207,3 @@ def admin_delete():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 400
-
-@main_controller.route("/update_credentials", methods=["POST"])
-def update_credentials():
-    if "user" not in session:
-        return jsonify({"success": False, "error": "Not logged in"}), 403
-
-    data = request.json
-    old_password = data.get("old_password")
-    new_password = data.get("new_password")
-
-    if not old_password or not new_password:
-        return jsonify({"success": False, "error": "All fields are required"}), 400
-
-    # Fetch the user by username (not id!)
-    if session["role"] == "eleve":
-        user = Eleve.query.filter_by(id=session["user"]).first()
-    else:
-        user = Professeur.query.filter_by(id=session["user"]).first()
-    
-    if not user or not user.check_password(old_password):
-        return jsonify({"success": False, "error": "Invalid current credentials"}), 400
-
-    # Update password
-    user.set_password(new_password) 
-    db.session.commit()
-
-    return jsonify({"success": True, "message": "Credentials updated successfully"})

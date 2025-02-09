@@ -1,0 +1,32 @@
+{% include 'header.html' %}
+<body>
+</br>
+    <div class="container mt-5">
+        <h3>Mon Cahier de Texte</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="box p-3">
+                    <h4>Agenda</h4>
+                    {% for cours in agenda %}
+                        <div class="agenda-item">
+                            <strong>{{ cours.matiere }}</strong> avec {{ cours.prof }}
+                            <small class="text-muted">{{ cours.debut }} - {{ cours.fin }}</small>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="box p-3">
+                    <h4>Travail à faire</h4>
+                    {% for devoir in devoirs %}
+                        <div class="devoir-item">
+                            <strong>{{ devoir.matiere }}</strong>: {{ devoir.contenu }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'footer.html' %}
+</body>
+</html>

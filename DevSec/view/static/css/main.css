@@ -5,8 +5,15 @@ body {
     height: 100vh;
 }
 
-.box, .boxx, .box_devoir, .vie-scolaire-container {
+.box, .box_devoir, .vie-scolaire-container {
     background-color: #FFDAB3 !important;
+    border: 2px solid #666;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.boxx {
+    background-color: #a5a5a583 !important;
     border: 2px solid #666;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -48,6 +55,20 @@ body {
         width: 95%;
     }
 }
+.header {
+    border-bottom: 2px solid #363636;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: rgb(128, 128, 128, 0.75);
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dropdown-item:hover {
+    background-color: #FFDAB3;
+}
+
 .modal {
     display: none;
     position: fixed;
@@ -56,11 +77,12 @@ body {
     top: 50%;
     transform: translate(-50%, -50%);
     width: 30%;
-    height: 27%;
+    height: 29%;
     background-color: rgba(0, 0, 0, 0.5);
     padding: 5px;
     border-radius: 8px;
 }
+
 .modal-content {
     background-color: #FFDAB3;
     padding: 20px;

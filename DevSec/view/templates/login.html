@@ -10,7 +10,7 @@
 <body>
     <div class="login-container">
         <h2>Pronote</h2>
-        <form action="{{ url_for('main_controller.login') }}" method="post">
+        <form action="{{ url_for('auth_controller.login') }}" method="post">
             <div class="mb-3">
                 <input type="text" name="username" class="form-control" placeholder="Username" required>
             </div>
