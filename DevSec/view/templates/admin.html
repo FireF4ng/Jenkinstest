@@ -25,12 +25,9 @@
                         Database Tables
                     </div>
                     <div class="list-group list-group-flush">
-                        <a href="#" class="list-group-item list-group-item-action" data-table="eleves">Élèves</a>
-                        <a href="#" class="list-group-item list-group-item-action" data-table="professeurs">Professeurs</a>
-                        <a href="#" class="list-group-item list-group-item-action" data-table="matieres">Matières</a>
-                        <a href="#" class="list-group-item list-group-item-action" data-table="notes">Notes</a>
-                        <a href="#" class="list-group-item list-group-item-action" data-table="classes">Classes</a>
-                        <a href="#" class="list-group-item list-group-item-action" data-table="profs_matieres">Prof-Matières</a>
+                        {% for table in ["eleves", "professeurs", "matieres", "notes", "classes", "profs_matieres", "devoirs", "agenda", "feedback"] %}
+                            <a href="#" class="list-group-item list-group-item-action" data-table="{{ table }}">{{ table|capitalize }}</a>
+                        {% endfor %}
                     </div>
                 </div>
             </div>

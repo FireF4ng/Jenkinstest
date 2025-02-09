@@ -1,4 +1,3 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime  # Import date from datetime module
 from db.db import db
 import hashlib
@@ -89,6 +88,29 @@ class ProfMatiere(db.Model):
     professeur_id = db.Column(db.Integer, db.ForeignKey('professeurs.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
     matiere_id = db.Column(db.Integer, db.ForeignKey('matieres.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
 
+class Devoir(db.Model):
+    __tablename__ = 'devoirs'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    matiere_id = db.Column(db.Integer, db.ForeignKey('matieres.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    professeur_id = db.Column(db.Integer, db.ForeignKey('professeurs.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    contenu = db.Column(db.Text, nullable=False)
+
+class Agenda(db.Model):
+    __tablename__ = 'agenda'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    classe_id = db.Column(db.Integer, db.ForeignKey('classes.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    matiere_id = db.Column(db.Integer, db.ForeignKey('matieres.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    professeur_id = db.Column(db.Integer, db.ForeignKey('professeurs.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    debut = db.Column(db.String(10), nullable=False)
+    fin = db.Column(db.String(10), nullable=False)
+
+class Feedback(db.Model):
+    __tablename__ = 'feedback'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('eleves.id' or 'professeurs.id', ondelete='CASCADE'), nullable=False)
+    user_role = db.Column(db.String(10), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+
 
 def add_admin_user():
     try:
@@ -111,7 +133,7 @@ def add_admin_user():
 def create_samples():
     try:
         if not Eleve.query.filter_by(id=1).first() or not Professeur.query.filter_by(id=1).first():
-            with db.session.no_autoflush:  # Prevents issues with foreign key constraints
+            with db.session.no_autoflush:
 
                 classe1 = Classe(nom="Classe 1", prof_principal=1)
                 db.session.add(classe1)
@@ -136,7 +158,7 @@ def create_samples():
                     Matiere(matiere='Francais')
                 ]
                 db.session.bulk_save_objects(matieres)
-                db.session.commit()  # Commit subjects before assigning notes
+                db.session.commit()
 
                 notes = [
                     Note(note=10, date=datetime.utcnow().date(), matiere_id=1, eleve_id=1),
@@ -144,7 +166,23 @@ def create_samples():
                     Note(note=15, date=datetime.utcnow().date(), matiere_id=1, eleve_id=2)
                 ]
                 db.session.bulk_save_objects(notes)
-                db.session.commit()  # Final commit for all data
+                db.session.commit()
+
+                prof_matieres = [
+                    ProfMatiere(professeur_id=1, matiere_id=1),
+                    ProfMatiere(professeur_id=2, matiere_id=2)
+                ]
+                db.session.bulk_save_objects(prof_matieres)
+                db.session.commit()
+
+                devoir = Devoir(matiere_id=1, professeur_id=1, contenu="Faire les exercices 1 et 2 de la page 10")
+                db.session.add(devoir)
+                db.session.commit()
+
+                agenda = Agenda(classe_id=1, matiere_id=1, professeur_id=1, debut="08:00", fin="09:00")
+                db.session.add(agenda)
+                db.session.commit()
+
                 print("Sample data created successfully!")
     except Exception as e:
         db.session.rollback()

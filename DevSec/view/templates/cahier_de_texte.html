@@ -9,13 +9,14 @@
                     {% if agenda %}
                         {% for cours in agenda %}
                             <div class="agenda-item p-2 mb-2">
+                                <strong>{{ cours.matiere.matiere }}</strong> 
                                 {% if role == "eleve" %}
-                                    <strong>{{ cours.matiere }}</strong> avec {{ cours.prof }}<br>
-                                    <small class="text-muted">{{ cours.debut }} - {{ cours.fin }}</small>
+                                    avec {{ cours.professeur.nom }} {{ cours.professeur.prenom }}
                                 {% elif role == "professeur" %}
-                                    <strong>{{ cours.matiere }}</strong> (Classe: {{ cours.classe }})<br>
-                                    <small class="text-muted">{{ cours.debut }} - {{ cours.fin }}</small>
+                                    (Classe : {{ cours.classe.nom }})
                                 {% endif %}
+                                <br>
+                                <small class="text-muted">{{ cours.debut }} - {{ cours.fin }}</small>
                             </div>
                         {% endfor %}
                     {% else %}
@@ -31,7 +32,8 @@
                     {% if devoirs %}
                         {% for devoir in devoirs %}
                             <div class="devoir-item p-2 mb-2">
-                                <strong>{{ devoir.matiere }}</strong>: {{ devoir.contenu }}
+                                <strong>{{ devoir.matiere.matiere }}</strong>:
+                                <span class="text-muted">{{ devoir.contenu }}</span>
                             </div>
                         {% endfor %}
                     {% else %}

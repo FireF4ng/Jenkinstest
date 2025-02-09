@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, session, redirect, url_for, jsonify, request
-from model.user_model import Eleve, Professeur, Classe, Note, Matiere, ProfMatiere
+from model.user_model import *
 from model.user_model import db
 import random
 
@@ -76,24 +76,23 @@ def update_score():
 
 @general_controller.route("/cahier_de_texte")
 def cahier_de_texte():
-    """Loads the homework and agenda page for students and teachers."""
+    """Loads the homework and agenda page dynamically."""
     if "user" not in session:
         return redirect(url_for("auth_controller.login"))
 
-    role = session.get("role")
-    eleve = Eleve.query.get(session["user"]) if role == "eleve" else None
-    professeur = Professeur.query.get(session["user"]) if role == "professeur" else None
-    agenda = [
-        {"matiere": "Maths", "prof": "M. Dupont", "debut": "8H30", "fin": "9H30"},
-        {"matiere": "Histoire", "prof": "Mme Lefevre", "debut": "10H00", "fin": "11H00"},
-    ]
-    devoirs = [
-        {"matiere": "Maths", "contenu": "Exercices 3, 4 et 5 page 42"},
-        {"matiere": "Histoire", "contenu": "Lire le chapitre sur la Révolution"},
-    ]
-    classes = Classe.query.all() if role == "professeur" else []
+    role = session["role"]
 
-    return render_template("cahier_de_texte.html", role=role, eleve=eleve, professeur=professeur, agenda=agenda, devoirs=devoirs, classes=classes)
+    # Fetch agenda for the student's class or professor's subjects
+    if role == "eleve":
+        eleve = Eleve.query.get(session["user"])
+        agenda = Agenda.query.filter_by(classe_id=eleve.classe_id).all()
+        devoirs = Devoir.query.filter(Devoir.matiere_id.in_([m.id for m in Matiere.query.all()])).all()
+    else:
+        professeur = Professeur.query.get(session["user"])
+        agenda = Agenda.query.filter_by(professeur_id=professeur.id).all()
+        devoirs = Devoir.query.filter_by(professeur_id=professeur.id).all()
+
+    return render_template("cahier_de_texte.html", role=role, agenda=agenda, devoirs=devoirs)
 
 @general_controller.route("/vie_scolaire")
 def vie_scolaire():
@@ -125,7 +124,40 @@ def profile():
     return render_template("profile.html", role=role, user=user, classe=classe, professeurs=professeurs, matieres=matieres)
 
 
-@general_controller.route("/communication")
+@general_controller.route("/communication", methods=["GET", "POST"])
 def communication():
     """Loads the communication page."""
+    if "user" not in session:
+        return redirect(url_for("auth_controller.login"))
+    
+    if request.method == "POST":
+        message = request.form.get("message")
+        if message:
+            feedback = Feedback(user_id=session["user"], user_role=session["role"], message=message)
+            db.session.add(feedback)
+            db.session.commit()
+            return jsonify({"success": True, "message": "Feedback envoyé avec succès!"})
+        
     return render_template("communication.html")
+
+@general_controller.route("/update_credentials", methods=["POST"])
+def update_credentials():
+    if "user" not in session:
+        return jsonify({"success": False, "error": "Not logged in"}), 403
+
+    data = request.json
+    old_password = data.get("old_password")
+    new_password = data.get("new_password")
+
+    if not old_password or not new_password:
+        return jsonify({"success": False, "error": "All fields are required"}), 400
+
+    user = Eleve.query.filter_by(id=session["user"]).first() or Professeur.query.filter_by(id=session["user"]).first()
+
+    if not user or not user.check_password(old_password):
+        return jsonify({"success": False, "error": "Invalid current credentials"}), 400
+
+    user.set_password(new_password) 
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Credentials updated successfully"})

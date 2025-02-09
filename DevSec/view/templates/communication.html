@@ -4,17 +4,26 @@
         <div class="row">
             <div class="col-md-4"></div>
             <div class="boxx p-3 col-md-4">
-                <h3>Contactez un administrateur</h3>
-                <form>
-                    <div class="mb-3">
-                        <label for="message" class="form-label">Votre message:</label>
-                        <textarea class="form-control" id="message" rows="4" required></textarea>
-                    </div>
+                <h3>📩 Donner un Feedback / Contactez un administrateur</h3>
+                <form id="feedbackform">
+                    <textarea name="message" class="form-control mb-2" placeholder="Votre message ici..." required></textarea>
                     <button type="submit" class="btn btn-primary">Envoyer</button>
                 </form>
             </div>
         </div>
     </div>
+    <script>
+        document.getElementById("feedbackform").addEventListener("submit", function(event) {
+            event.preventDefault();
+            fetch("{{ url_for('general_controller.communication') }}", {
+                method: "POST",
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => console.error("Erreur:", error));
+        });
+    </script>
     {% include 'footer.html' %}
 </body>
 </html>

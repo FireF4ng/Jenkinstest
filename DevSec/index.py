@@ -38,10 +38,6 @@ if __name__ == "__main__":
 
 
 
-"""TODO
-- Tableau devoir a faire
-- Tableau agenda (classe, matiere, matiere-prof, debut, fin)
-- Finir toute pages secondaires
-- page communication = feedback normale
+"""TODO:
 - Implementation Sonarqube et flake8 (noter toutes failles critiques et high)
 """

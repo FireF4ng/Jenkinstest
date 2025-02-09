@@ -1,8 +1,20 @@
 from flask import Blueprint, request, session, jsonify, redirect, url_for, render_template
-from model.user_model import Eleve, Professeur, Matiere, Note, Classe, ProfMatiere, db
+from model.user_model import *
 from datetime import datetime
 
 admin_controller = Blueprint("admin_controller", __name__)
+global model
+model = {
+        "eleves": Eleve,
+        "professeurs": Professeur,
+        "matieres": Matiere,
+        "notes": Note,
+        "classes": Classe,
+        "profs_matieres": ProfMatiere,
+        "feedback": Feedback,
+        "devoirs": Devoir,
+        "agenda": Agenda
+    }
 
 @admin_controller.route("/admin")
 def admin_dashboard():
@@ -23,20 +35,13 @@ def admin_data():
     sort_by = request.args.get("sort", "")
     sort_order = request.args.get("order", "asc")
     
-    model = {
-        "eleves": Eleve,
-        "professeurs": Professeur,
-        "matieres": Matiere,
-        "notes": Note,
-        "classes": Classe,
-        "profs_matieres": ProfMatiere
-    }.get(table)
+    table_list = model.get(table)
     
-    if not model:
+    if not table_list:
         return jsonify({"error": "Invalid table"}), 400
     
     if entry_id:
-        entry = model.query.get(entry_id)
+        entry = table_list.query.get(entry_id)
         if not entry:
             return jsonify({"error": "Entry not found"}), 404
         
@@ -50,24 +55,24 @@ def admin_data():
         
         return jsonify({"entry": entry_data})
     
-    query = model.query
+    query = table_list.query
 
     # Search functionality
     if search_query:
         filters = []
-        for column in model.__table__.columns:
+        for column in table_list.__table__.columns:
             if column.type.python_type == str:
                 filters.append(column.ilike(f"%{search_query}%"))
         query = query.filter(db.or_(*filters))
 
     # Sorting functionality
     if sort_by:
-        column = getattr(model, sort_by, None)
+        column = getattr(table_list, sort_by, None)
         if column:
             query = query.order_by(column.asc() if sort_order == "asc" else column.desc())
 
     entries = query.all()
-    result = [{col.name: getattr(entry, col.name) for col in model.__table__.columns} for entry in entries]
+    result = [{col.name: getattr(entry, col.name) for col in table_list.__table__.columns} for entry in entries]
 
     return jsonify({"success": True, "entries": result})
 
@@ -77,20 +82,13 @@ def admin_form():
         return jsonify({"error": "Unauthorized"}), 403
     
     table = request.args.get("table")
-    model = {
-        "eleves": Eleve,
-        "professeurs": Professeur,
-        "matieres": Matiere,
-        "notes": Note,
-        "classes": Classe,
-        "profs_matieres": ProfMatiere
-    }.get(table)
+    table_list = model.get(table)
     
-    if not model:
+    if not table_list:
         return jsonify({"error": "Invalid table"}), 400
     
     # Get column names excluding internal SQLAlchemy attributes
-    fields = [col.name for col in model.__table__.columns if not col.name.startswith('_')]
+    fields = [col.name for col in table_list.__table__.columns if not col.name.startswith('_')]
     return jsonify(fields)
 
 
@@ -104,28 +102,19 @@ def update_entry():
     if not table or not entry_id or not updates:
         return jsonify({"success": False, "error": "Missing required fields"}), 400
 
-    # Map table names to models
-    model_mapping = {
-        "eleves": Eleve,
-        "professeurs": Professeur,
-        "matieres": Matiere,
-        "notes": Note,
-        "classes": Classe,
-        "profs_matieres": ProfMatiere
-    }
 
-    model = model_mapping.get(table)
-    if not model:
+    table_list = model.get(table)
+    if not table_list:
         return jsonify({"success": False, "error": "Invalid table"}), 400
 
     # Find the entry and update it
-    entry = model.query.get(entry_id)
+    entry = table_list.query.get(entry_id)
     if not entry:
         return jsonify({"success": False, "error": "Entry not found"}), 404
 
     for key, value in updates.items():
         if hasattr(entry, key):
-            column_type = getattr(model, key).property.columns[0].type
+            column_type = getattr(table_list, key).property.columns[0].type
 
             # Convert string to date if the column is a Date type
             if isinstance(column_type, db.Date):
@@ -134,6 +123,11 @@ def update_entry():
                 except ValueError:
                     return jsonify({"success": False, "error": f"Invalid date format for {key}"}), 400
 
+            if key == "mdp_hash":
+                if session.get("role") == "eleve":
+                    value = Eleve.set_password(value)
+                elif session.get("role") == "professeur":
+                    value = Professeur.set_password(value)
             setattr(entry, key, value)
 
     try:
@@ -160,20 +154,11 @@ def add_entry():
         except ValueError:
             return jsonify({"success": False, "error": "Invalid date format"}), 400
 
-    model_mapping = {
-        "eleves": Eleve,
-        "professeurs": Professeur,
-        "matieres": Matiere,
-        "notes": Note,
-        "classes": Classe,
-        "profs_matieres": ProfMatiere
-    }
-
-    model = model_mapping.get(table)
-    if not model:
+    table_list = model.get(table)
+    if not table_list:
         return jsonify({"success": False, "error": "Invalid table"}), 400
 
-    entry = model(**entry_data)
+    entry = table_list(**entry_data)
     db.session.add(entry)
     db.session.commit()
     return jsonify({"success": True, "message": "Entry added successfully"})
@@ -187,16 +172,9 @@ def admin_delete():
     table = data["table"]
     entry_id = data["id"]
     
-    model = {
-        "eleves": Eleve,
-        "professeurs": Professeur,
-        "matieres": Matiere,
-        "notes": Note,
-        "classes": Classe,
-        "profs_matieres": ProfMatiere
-    }.get(table)
+    table_list = model.get(table)
     
-    entry = model.query.get(entry_id)
+    entry = table_list.query.get(entry_id)
     if not entry:
         return jsonify({"error": "Entry not found"}), 404
     
