@@ -85,7 +85,7 @@
                                     <h5 class="mb-1">{{ devoir.matiere.matiere }}</h5>
                                     <p class="mb-0 text-muted">{{ devoir.contenu }}</p>
                                 {% elif role == "professeur" %}
-                                    <h5 class="mb-1">{{ devoir.matiere.nom }} (Classe : {{ devoir.classe.nom }})</h5>
+                                    <h5 class="mb-1">{{ devoir.matiere.matiere }} (Classe : {{ devoir.classe.nom }})</h5>
                                     <p class="mb-0 text-muted">{{ devoir.contenu }}</p>
                                 {% endif %}
                             </div>

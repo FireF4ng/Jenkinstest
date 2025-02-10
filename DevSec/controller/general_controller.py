@@ -36,29 +36,18 @@ def student_dashboard():
     return render_template("main.html", role=role, eleve=eleve, notes=notes, agenda=agenda, devoirs=devoirs)
 
 
-
 @general_controller.route("/teacher_dashboard")
 def teacher_dashboard():
-    """Loads teacher dashboard with recent student grades and assigned agenda/work."""
+    """Loads teacher dashboard with recent student grades."""
     if "user" not in session or session["role"] != "professeur":
         return redirect(url_for("auth_controller.login"))
 
     professeur = Professeur.query.get(session["user"])
-    if not professeur:
-        return redirect(url_for("auth_controller.login"))
-
     role = "professeur"
 
-    last_notes = (
-        Note.query
-        .join(Eleve)
-        .join(Matiere)
-        .join(ProfMatiere, ProfMatiere.matiere_id == Note.matiere_id)
-        .filter(ProfMatiere.professeur_id == professeur.id)
-        .order_by(Note.date.desc())
-        .limit(5)
-        .all()
-    )
+
+    last_notes = Note.query.join(Eleve).join(ProfMatiere, ProfMatiere.matiere_id == Note.matiere_id).filter(
+        ProfMatiere.professeur_id == professeur.id).order_by(Note.date.desc()).limit(5).all()
 
     agenda = (
         Agenda.query
@@ -69,11 +58,13 @@ def teacher_dashboard():
     )
 
     devoirs = (
-        Devoir.query
-        .join(Matiere)
-        .filter(Devoir.professeur_id == professeur.id)
-        .all()
+    Devoir.query
+    .join(Matiere)
+    .join(Classe)
+    .filter(Devoir.professeur_id == professeur.id)
+    .all()
     )
+
 
     return render_template("main.html", role=role, professeur=professeur, last_notes=last_notes, agenda=agenda, devoirs=devoirs)
 

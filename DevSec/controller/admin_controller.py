@@ -16,6 +16,7 @@ model = {
         "agenda": Agenda
     }
 
+
 @admin_controller.route("/admin")
 def admin_dashboard():
     """Renders the admin dashboard."""
@@ -23,6 +24,7 @@ def admin_dashboard():
         return redirect(url_for("auth_controller.login"))
     
     return render_template("admin.html")
+
 
 @admin_controller.route("/admin/data")
 def admin_data():
@@ -75,6 +77,7 @@ def admin_data():
     result = [{col.name: getattr(entry, col.name) for col in table_list.__table__.columns} for entry in entries]
 
     return jsonify({"success": True, "entries": result})
+
 
 @admin_controller.route("/admin/form")
 def admin_form():
@@ -157,6 +160,14 @@ def add_entry():
     table_list = model.get(table)
     if not table_list:
         return jsonify({"success": False, "error": "Invalid table"}), 400
+    
+
+    if table == "eleves":
+        entry_data["nom"] = caesar_cipher(entry_data["nom"])
+        entry_data["prenom"] = caesar_cipher(entry_data["prenom"])
+    elif table == "professeurs":
+        entry_data["nom"] = caesar_cipher(entry_data["nom"])
+        entry_data["prenom"] = caesar_cipher(entry_data["prenom"])
 
     entry = table_list(**entry_data)
     db.session.add(entry)
