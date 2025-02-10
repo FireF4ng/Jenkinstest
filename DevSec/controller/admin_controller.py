@@ -105,7 +105,6 @@ def update_entry():
     if not table or not entry_id or not updates:
         return jsonify({"success": False, "error": "Missing required fields"}), 400
 
-
     table_list = model.get(table)
     if not table_list:
         return jsonify({"success": False, "error": "Invalid table"}), 400
@@ -117,14 +116,22 @@ def update_entry():
 
     for key, value in updates.items():
         if hasattr(entry, key):
+            # Handle properties (nom and prenom)
+            if isinstance(getattr(type(entry), key, None), property):
+                setattr(entry, key, value)
+                continue
+
+            # Handle regular columns
             column_type = getattr(table_list, key).property.columns[0].type
 
+            # Convert string to date if the column is a Date type
             if isinstance(column_type, db.Date):
                 try:
                     value = datetime.strptime(value, "%Y-%m-%d").date()
                 except ValueError:
                     return jsonify({"success": False, "error": f"Invalid date format for {key}"}), 400
 
+            # Hash passwords correctly
             if key == "mdp_hash":
                 if isinstance(entry, Eleve) or isinstance(entry, Professeur):
                     entry.set_password(value)
@@ -141,7 +148,6 @@ def update_entry():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-
 @admin_controller.route("/admin/add", methods=["POST"])
 def add_entry():
     data = request.json
@@ -151,28 +157,48 @@ def add_entry():
     if not table or not entry_data:
         return jsonify({"success": False, "error": "Missing required fields"}), 400
 
-    if "date" in entry_data:
-        try:
-            entry_data["date"] = datetime.strptime(entry_data["date"], "%Y-%m-%d").date()
-        except ValueError:
-            return jsonify({"success": False, "error": "Invalid date format"}), 400
-
     table_list = model.get(table)
     if not table_list:
         return jsonify({"success": False, "error": "Invalid table"}), 400
-    
 
-    if table == "eleves":
-        entry_data["nom"] = caesar_cipher(entry_data["nom"])
-        entry_data["prenom"] = caesar_cipher(entry_data["prenom"])
-    elif table == "professeurs":
-        entry_data["nom"] = caesar_cipher(entry_data["nom"])
-        entry_data["prenom"] = caesar_cipher(entry_data["prenom"])
+    # Create the entry object
+    entry = table_list()
 
-    entry = table_list(**entry_data)
-    db.session.add(entry)
-    db.session.commit()
-    return jsonify({"success": True, "message": "Entry added successfully"})
+    # Iterate through the data and set attributes
+    for key, value in entry_data.items():
+        if hasattr(entry, key):
+            # Handle properties (nom and prenom)
+            if isinstance(getattr(type(entry), key, None), property):
+                setattr(entry, key, value)
+                continue
+
+            # Handle regular columns
+            column_type = getattr(table_list, key).property.columns[0].type
+
+            # Convert string to date if the column is a Date type
+            if isinstance(column_type, db.Date):
+                try:
+                    value = datetime.strptime(value, "%Y-%m-%d").date()
+                except ValueError:
+                    return jsonify({"success": False, "error": f"Invalid date format for {key}"}), 400
+
+            # Hash passwords correctly
+            if key == "mdp_hash":
+                if isinstance(entry, Eleve) or isinstance(entry, Professeur):
+                    entry.set_password(value)
+                else:
+                    return jsonify({"success": False, "error": "Cannot update password for this entry"}), 400
+            else:
+                setattr(entry, key, value)
+
+    try:
+        db.session.add(entry)
+        db.session.commit()
+        return jsonify({"success": True, "message": "Entry added successfully"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 @admin_controller.route("/admin/delete", methods=["POST"])
 def admin_delete():

@@ -18,6 +18,9 @@ def student_dashboard():
     role = "eleve"
     notes = eleve.get_notes()
 
+    print(eleve.nom)
+    print(eleve._nom)
+
     agenda = (
         Agenda.query
         .join(Matiere)
@@ -45,6 +48,8 @@ def teacher_dashboard():
     professeur = Professeur.query.get(session["user"])
     role = "professeur"
 
+    print(professeur.nom)
+    print(professeur._nom)
 
     last_notes = Note.query.join(Eleve).join(ProfMatiere, ProfMatiere.matiere_id == Note.matiere_id).filter(
         ProfMatiere.professeur_id == professeur.id).order_by(Note.date.desc()).limit(5).all()
