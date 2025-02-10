@@ -2,18 +2,18 @@
 <body style="background-color: ghostwhite;">
     <div class="container-fluid mt-5 pt-5">
         <div class="row">
-            <!-- Left Column - Agenda -->
+            <!-- Left Column - 📅 Agenda -->
             <div class="col-md-4">
                 <div class="box p-3">
-                    <h4 class="mb-4">Agenda</h4>
+                    <h4 class="mb-4">📅 Agenda</h4>
                     {% if agenda %}
                         {% for cours in agenda %}
                             <div class="agenda-item p-2 mb-2">
                                 {% if role == "eleve" %}
-                                    <strong>{{ cours.matiere }}</strong> avec {{ cours.prof }} <br>
+                                    <strong>{{ cours.matiere.matiere }}</strong> avec {{ cours.professeur.nom }} {{ cours.professeur.prenom }}<br>
                                     <small class="text-muted">{{ cours.debut }} - {{ cours.fin }}</small>
                                 {% elif role == "professeur" %}
-                                    <strong>{{ cours.matiere }}</strong> (Classe : {{ cours.classe }}) <br>
+                                    <strong>{{ cours.matiere.matiere }}</strong> (Classe : {{ cours.classe.nom }})<br>
                                     <small class="text-muted">{{ cours.debut }} - {{ cours.fin }}</small>
                                 {% endif %}
                             </div>
@@ -24,17 +24,16 @@
                 </div>
             </div>
 
-            <!-- Right Column - Vie Scolaire -->
+            <!-- Middle Column - 🎓 Vie Scolaire -->
             <div class="col-md-4">
                 <div class="vie-scolaire-container p-3 mb-4">
-                    <h4 class="mb-4">Vie Scolaire</h4>
+                    <h4 class="mb-4">🎓 Vie Scolaire</h4>
                     
-                    <!-- Notes Sub-container -->
+                    <!-- Notes Section -->
                     <div class="notes-container row p-3 mb-4">
-                        <!-- Show different sections based on role -->
                         {% if role == "eleve" %}
                         <div class="col">
-                            <h4>Mes Notes</h4>
+                            <h4>📌 Mes Notes</h4>
                             {% for note in notes %}
                             <div class="note-item">
                                 <strong>{{ note.matiere.matiere }}</strong>: {{ note.note }} ({{ note.date }})
@@ -43,17 +42,17 @@
                         </div>
                         {% elif role == "professeur" %}
                         <div class="col">
-                            <h4>Derniers Notés</h4>
+                            <h4>📝 Derniers Notés</h4>
                             {% for note in last_notes %}
                             <div class="note-item col">
-                                <strong class="row-10">{{ note.eleve.nom }} {{ note.eleve.prenom }}</strong>: {{ note.note }} ({{ note.date }})
+                                <strong>{{ note.eleve.nom }} {{ note.eleve.prenom }}</strong>: {{ note.note }} ({{ note.date }})
                                 <button class="edit-score-btn row-2" data-note-id="{{ note.id }}">✏️</button>
                             </div>
                             {% endfor %}
                         </div>
                         {% endif %}
 
-                        <!-- Popup for editing score -->
+                        <!-- Popup for Editing Score -->
                         <div id="editScoreModal" class="modal">
                             <div class="modal-content">
                                 <span class="close">&times;</span>
@@ -67,26 +66,26 @@
                         <script src="../static/js/main.js"></script> 
                     </div>
 
-                    <!-- Documents Sub-container -->
+                    <!-- Documents Section -->
                     <div class="documents-container p-3">
-                        <h5>Documents</h5>
+                        <h5>📂 Documents</h5>
                         <div class="text-muted">Aucun document disponible</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Center Column - Travail à faire -->
+            <!-- Right Column - 📖 Travail à faire -->
             <div class="col-md-4">
                 <div class="box_devoir p-3">
-                    <h4 class="text-center mb-3"><strong>Travail à faire</strong></h4>
+                    <h4 class="text-center mb-3"><strong>📖 Travail à faire</strong></h4>
                     {% if devoirs %}
                         {% for devoir in devoirs %}
                             <div class="devoir-item p-2 mb-2">
                                 {% if role == "eleve" %}
-                                    <h5 class="mb-1">{{ devoir.matiere }}</h5>
+                                    <h5 class="mb-1">{{ devoir.matiere.matiere }}</h5>
                                     <p class="mb-0 text-muted">{{ devoir.contenu }}</p>
                                 {% elif role == "professeur" %}
-                                    <h5 class="mb-1">{{ devoir.matiere }} (Classe : {{ devoir.classe }})</h5>
+                                    <h5 class="mb-1">{{ devoir.matiere.nom }} (Classe : {{ devoir.classe.nom }})</h5>
                                     <p class="mb-0 text-muted">{{ devoir.contenu }}</p>
                                 {% endif %}
                             </div>

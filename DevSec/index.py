@@ -39,7 +39,6 @@ if __name__ == "__main__":
 
 
 """TODO:
-- Verifier pages secondaires
 - Coder les noms prenoms dans la db
 - Implementation Sonarqube et flake8 (noter toutes failles critiques et high)
 - Commenter le code et verifier si tout nom variables correct

@@ -9,7 +9,7 @@
                     {% if agenda %}
                         {% for cours in agenda %}
                             <div class="agenda-item p-2 mb-2">
-                                <strong>{{ cours.matiere.nom }}</strong> 
+                                <strong>{{ cours.matiere.matiere }}</strong> 
                                 {% if role == "eleve" %}
                                     avec {{ cours.professeur.nom }} {{ cours.professeur.prenom }}
                                 {% elif role == "professeur" %}

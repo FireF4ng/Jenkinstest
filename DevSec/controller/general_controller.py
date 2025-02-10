@@ -7,51 +7,76 @@ general_controller = Blueprint("general_controller", __name__)
 
 @general_controller.route("/student_dashboard")
 def student_dashboard():
-    """Loads student main menu with agenda and homework."""
+    """Loads student main menu with real agenda and homework from DB."""
     if "user" not in session or session["role"] != "eleve":
         return redirect(url_for("auth_controller.login"))
 
-    role = session.get("role")
-    eleve = Eleve.query.filter_by(id=session["user"]).first()
-    notes = eleve.get_notes() if eleve else []
-    agenda = [
-        {"matiere": m.matiere, "debut": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}", "fin": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}", "prof": (Professeur.query.filter_by(id=pm.professeur_id).first().nom +' '+ Professeur.query.filter_by(id=pm.professeur_id).first().prenom) if pm else "Inconnu"} 
-        for pm in ProfMatiere.query.all() for m in Matiere.query.filter_by(id=pm.matiere_id).all()
-    ]
-    devoirs = [
-        {"matiere": m.matiere, "contenu": "Exercice aléatoire"} for m in Matiere.query.all()
-    ]
+    eleve = Eleve.query.get(session["user"])
+    if not eleve:
+        return redirect(url_for("auth_controller.login"))
+
+    role = "eleve"
+    notes = eleve.get_notes()
+
+    agenda = (
+        Agenda.query
+        .join(Matiere)
+        .join(Professeur)
+        .filter(Agenda.classe_id == eleve.classe_id)
+        .all()
+    )
+
+    devoirs = (
+        Devoir.query
+        .join(Matiere)
+        .filter(Devoir.matiere_id.in_([m.id for m in Matiere.query.all()]))
+        .all()
+    )
+
     return render_template("main.html", role=role, eleve=eleve, notes=notes, agenda=agenda, devoirs=devoirs)
+
 
 
 @general_controller.route("/teacher_dashboard")
 def teacher_dashboard():
-    """Loads teacher dashboard with recent student grades."""
+    """Loads teacher dashboard with recent student grades and assigned agenda/work."""
     if "user" not in session or session["role"] != "professeur":
         return redirect(url_for("auth_controller.login"))
 
-    professeur = Professeur.query.filter_by(id=session["user"]).first()
-    role = session.get("role")
+    professeur = Professeur.query.get(session["user"])
+    if not professeur:
+        return redirect(url_for("auth_controller.login"))
+
+    role = "professeur"
 
     last_notes = (
         Note.query
         .join(Eleve)
+        .join(Matiere)
         .join(ProfMatiere, ProfMatiere.matiere_id == Note.matiere_id)
         .filter(ProfMatiere.professeur_id == professeur.id)
         .order_by(Note.date.desc())
         .limit(5)
         .all()
     )
-    agenda = [
-        {"classe": c.nom, "matiere": m.matiere, "debut": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}", "fin": f"{random.randint(8, 16)}H{random.choice(["00", "30"])}"} 
-        for c in Classe.query.all() for m in Matiere.query.all()
-    ]
-    devoirs = [
-        {"classe": c.nom, "matiere": m.matiere, "contenu": "Devoir aléatoire"} 
-        for c in Classe.query.all() for m in Matiere.query.all()
-    ]
+
+    agenda = (
+        Agenda.query
+        .join(Matiere)
+        .join(Classe)
+        .filter(Agenda.professeur_id == professeur.id)
+        .all()
+    )
+
+    devoirs = (
+        Devoir.query
+        .join(Matiere)
+        .filter(Devoir.professeur_id == professeur.id)
+        .all()
+    )
 
     return render_template("main.html", role=role, professeur=professeur, last_notes=last_notes, agenda=agenda, devoirs=devoirs)
+
 
 
 @general_controller.route("/update_score", methods=["POST"])
