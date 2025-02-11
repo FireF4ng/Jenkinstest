@@ -4,12 +4,14 @@ import time
 
 auth_controller = Blueprint("auth_controller", __name__)
 
+auth_controller = Blueprint("auth_controller", __name__)
+LOGIN_ROUTE = "auth_controller.login"
+
 @auth_controller.route("/")
 def home():
-    """Redirect user to main menu if logged in, else to login page."""
     if "user" in session:
         return redirect(url_for("auth_controller.main_menu"))
-    return redirect(url_for("auth_controller.login"))
+    return redirect(url_for(LOGIN_ROUTE))
 
 @auth_controller.route("/login", methods=["GET", "POST"])
 def login():
@@ -37,13 +39,13 @@ def logout():
     """Logs out the user and clears session."""
     session.pop("user", None)
     session.pop("role", None)
-    return redirect(url_for("auth_controller.login"))
+    return redirect(url_for(LOGIN_ROUTE))
 
 @auth_controller.route("/main_menu")
 def main_menu():
     """Redirects users based on their role (student or professor)."""
     if "user" not in session:
-        return redirect(url_for("auth_controller.login"))
+        return redirect(url_for(LOGIN_ROUTE))
     
     if session["user"] == 0:
         return redirect(url_for("admin_controller.admin_dashboard"))

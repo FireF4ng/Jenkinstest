@@ -1,5 +1,5 @@
 from flask import Flask
-from model.user_model import *
+from model.user_model import db, add_admin_user, create_samples
 from controller.auth_controller import auth_controller
 from controller.admin_controller import admin_controller
 from controller.general_controller import general_controller

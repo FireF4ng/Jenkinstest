@@ -1,8 +1,13 @@
-from datetime import datetime  # Import date from datetime module
+from datetime import datetime
 from db.db import db
 from tools.tools import caesar_cipher
 import hashlib
 import os
+
+# Constants for foreign key references
+CLASSES_ID = 'classes.id'
+PROFESSEURS_ID = 'professeurs.id'
+MATIERES_ID = 'matieres.id'
 
 class Eleve(db.Model):
     __tablename__ = 'eleves'
@@ -10,7 +15,7 @@ class Eleve(db.Model):
     username = db.Column(db.String(100), unique=True, nullable=False)
     _nom = db.Column("nom", db.String(100), nullable=False)
     _prenom = db.Column("prenom", db.String(100), nullable=False)
-    classe_id = db.Column(db.Integer, db.ForeignKey('classes.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    classe_id = db.Column(db.Integer, db.ForeignKey(CLASSES_ID, ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
     mdp_hash = db.Column(db.String(255), nullable=False)
     
     notes = db.relationship('Note', backref='eleve', lazy=True)
@@ -97,7 +102,7 @@ class Classe(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     nom = db.Column(db.String(100), nullable=False)
     eleves = db.relationship('Eleve', backref='classe', lazy=True)
-    prof_principal = db.Column(db.Integer, db.ForeignKey('professeurs.id', ondelete='RESTRICT', onupdate='RESTRICT'))
+    prof_principal = db.Column(db.Integer, db.ForeignKey(PROFESSEURS_ID, ondelete='RESTRICT', onupdate='RESTRICT'), nullable=True)
 
 class Matiere(db.Model):
     __tablename__ = 'matieres'
@@ -111,7 +116,7 @@ class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     note = db.Column(db.Integer, nullable=False)
     date = db.Column(db.Date, nullable=False, default=datetime.utcnow().date)
-    matiere_id = db.Column(db.Integer, db.ForeignKey('matieres.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    matiere_id = db.Column(db.Integer, db.ForeignKey(MATIERES_ID, ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
     eleve_id = db.Column(db.Integer, db.ForeignKey('eleves.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
 
     __table_args__ = (
@@ -124,28 +129,27 @@ class Note(db.Model):
 class ProfMatiere(db.Model):
     __tablename__ = 'profs_matieres'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    professeur_id = db.Column(db.Integer, db.ForeignKey('professeurs.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
-    matiere_id = db.Column(db.Integer, db.ForeignKey('matieres.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    professeur_id = db.Column(db.Integer, db.ForeignKey(PROFESSEURS_ID, ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    matiere_id = db.Column(db.Integer, db.ForeignKey(MATIERES_ID, ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
 
 class Devoir(db.Model):
     __tablename__ = 'devoirs'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    matiere_id = db.Column(db.Integer, db.ForeignKey('matieres.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
-    professeur_id = db.Column(db.Integer, db.ForeignKey('professeurs.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
-    classe_id = db.Column(db.Integer, db.ForeignKey('classes.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    matiere_id = db.Column(db.Integer, db.ForeignKey(MATIERES_ID, ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    professeur_id = db.Column(db.Integer, db.ForeignKey(PROFESSEURS_ID, ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    classe_id = db.Column(db.Integer, db.ForeignKey(CLASSES_ID, ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
     contenu = db.Column(db.Text, nullable=False)
 
     matiere = db.relationship('Matiere', backref='devoirs', lazy=True)
     professeur = db.relationship('Professeur', backref='devoirs', lazy=True)
     classe = db.relationship('Classe', backref='devoirs', lazy=True)
 
-
 class Agenda(db.Model):
     __tablename__ = 'agenda'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    classe_id = db.Column(db.Integer, db.ForeignKey('classes.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
-    matiere_id = db.Column(db.Integer, db.ForeignKey('matieres.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
-    professeur_id = db.Column(db.Integer, db.ForeignKey('professeurs.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    classe_id = db.Column(db.Integer, db.ForeignKey(CLASSES_ID, ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    matiere_id = db.Column(db.Integer, db.ForeignKey(MATIERES_ID, ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
+    professeur_id = db.Column(db.Integer, db.ForeignKey(PROFESSEURS_ID, ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False)
     debut = db.Column(db.String(10), nullable=False)
     fin = db.Column(db.String(10), nullable=False)
 
@@ -159,7 +163,6 @@ class Feedback(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('eleves.id' or 'professeurs.id', ondelete='CASCADE'), nullable=False)
     user_role = db.Column(db.String(10), nullable=False)
     message = db.Column(db.Text, nullable=False)
-
 
 def add_admin_user():
     try:
@@ -178,7 +181,6 @@ def add_admin_user():
     except Exception as e:
         db.session.rollback()
         print(f"Error creating admin user: {str(e)}")
-        
 
 def create_samples():
     try:
@@ -189,7 +191,6 @@ def create_samples():
                 classe2 = Classe(nom="Classe 2")
                 db.session.add_all([classe1, classe2])
                 db.session.commit()
-        
         
                 # Create sample students (names will be encrypted)
                 eleves = []
@@ -214,7 +215,6 @@ def create_samples():
         
                 db.session.bulk_save_objects(eleves)
         
-        
                 # Create sample professors (names will be encrypted)
                 profs = []
         
@@ -231,7 +231,6 @@ def create_samples():
                 profs.append(prof)
                 
                 db.session.bulk_save_objects(profs)
-        
         
                 # Create sample subjects
                 matieres = [
@@ -257,14 +256,12 @@ def create_samples():
                 db.session.bulk_save_objects(profs_matieres)
                 db.session.commit()
         
-        
                 # Create sample agenda
                 agenda = [
                     Agenda(classe_id=classe1.id, matiere_id=1, professeur_id=1, debut="8H30", fin="9H30"),
                     Agenda(classe_id=classe2.id, matiere_id=2, professeur_id=2, debut="10H00", fin="11H00")
                 ]
                 db.session.bulk_save_objects(agenda)
-        
         
                 # Create sample homework
                 devoirs = [
@@ -273,7 +270,6 @@ def create_samples():
                 ]
                 db.session.bulk_save_objects(devoirs)
                 db.session.commit()
-        
         
                 print("Sample data created successfully!")
 
