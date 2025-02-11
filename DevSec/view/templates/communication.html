@@ -6,6 +6,7 @@
             <div class="box p-3 col-md-4">
                 <h3>📩 Donner un Feedback / Contactez un administrateur</h3>
                 <form id="feedbackform">
+                    {{ csrf_token() }}
                     <textarea name="message" class="form-control mb-2" placeholder="Votre message ici..." required></textarea>
                     <button type="submit" class="btn btn-primary">Envoyer</button>
                 </form>

@@ -160,7 +160,7 @@ class Agenda(db.Model):
 class Feedback(db.Model):
     __tablename__ = 'feedback'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('eleves.id' or 'professeurs.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)
     user_role = db.Column(db.String(10), nullable=False)
     message = db.Column(db.Text, nullable=False)
 

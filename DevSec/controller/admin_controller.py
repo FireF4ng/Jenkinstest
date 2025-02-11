@@ -1,4 +1,5 @@
 from flask import Blueprint, request, session, jsonify, redirect, url_for, render_template
+from flask_wtf.csrf import generate_csrf
 from model.user_model import Eleve, Professeur, Matiere, Note, Classe, ProfMatiere, Feedback, Devoir, Agenda, db
 from datetime import datetime
 
@@ -51,7 +52,7 @@ def admin_dashboard():
     if session.get("user") != 0:  # Ensures only admin has access
         return redirect(url_for("auth_controller.login"))
     
-    return render_template("admin.html")
+    return render_template("admin.html", csrf_token=generate_csrf())
 
 
 # Updated admin_data route
@@ -134,10 +135,12 @@ def admin_form():
 # Updated update_entry route
 @admin_controller.route("/admin/update", methods=["POST"])
 def update_entry():
+    """Met à jour une entrée existante."""
+    if error := validate_admin_access():
+        return error
+
     data = request.json
-    table = data.get("table")
-    entry_id = data.get("id")
-    updates = data.get("updates")
+    table, entry_id, updates = data.get("table"), data.get("id"), data.get("updates")
 
     if not all([table, entry_id, updates]):
         return jsonify({"success": False, "error": "Missing required fields"}), 400
@@ -151,11 +154,9 @@ def update_entry():
         return jsonify({"success": False, "error": ENTRY_NOT_FOUND_MSG}), 404
 
     try:
-        process_updates(entry, table_model, updates)
+        process_entry_data(entry, updates)
         db.session.commit()
         return jsonify({"success": True, "message": "Entry updated successfully"})
-    except ValueError as e:
-        return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
@@ -186,58 +187,54 @@ def handle_password_update(entry, value):
         raise ValueError("Cannot update password for this entry")
 
 # Similar refactoring for add_entry would follow the same pattern
-
-
 @admin_controller.route("/admin/add", methods=["POST"])
 def add_entry():
+    """Ajoute une entrée à la base de données."""
+    if error := validate_admin_access():
+        return error
+    
     data = request.json
-    table = data.get("table")
-    entry_data = data.get("data")
+    table, entry_data = data.get("table"), data.get("data")
 
     if not table or not entry_data:
         return jsonify({"success": False, "error": "Missing required fields"}), 400
 
-    table_list = get_table_model(table)
-    if not table_list:
+    table_model = get_table_model(table)
+    if not table_model:
         return jsonify({"success": False, "error": INVALID_TABLE_MSG}), 400
 
-    # Create the entry object
-    entry = table_list()
-
-    # Iterate through the data and set attributes
-    for key, value in entry_data.items():
-        if hasattr(entry, key):
-            # Handle properties (nom and prenom)
-            if isinstance(getattr(type(entry), key, None), property):
-                setattr(entry, key, value)
-                continue
-
-            # Handle regular columns
-            column_type = getattr(table_list, key).property.columns[0].type
-
-            # Convert string to date if the column is a Date type
-            if isinstance(column_type, db.Date):
-                try:
-                    value = datetime.strptime(value, "%Y-%m-%d").date()
-                except ValueError:
-                    return jsonify({"success": False, "error": f"Invalid date format for {key}"}), 400
-
-            # Hash passwords correctly
-            if key == "mdp_hash":
-                if isinstance(entry, Eleve) or isinstance(entry, Professeur):
-                    entry.set_password(value)
-                else:
-                    return jsonify({"success": False, "error": "Cannot update password for this entry"}), 400
-            else:
-                setattr(entry, key, value)
-
+    entry = table_model()
+    
     try:
+        process_entry_data(entry, entry_data)
         db.session.add(entry)
         db.session.commit()
         return jsonify({"success": True, "message": "Entry added successfully"})
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+
+def process_entry_data(entry, entry_data):
+    """Traite les données d'entrée avant de les enregistrer dans la base."""
+    for key, value in entry_data.items():
+        if hasattr(entry, key):
+            if isinstance(getattr(type(entry), key, None), property):
+                setattr(entry, key, value)
+            elif key == "mdp_hash" and isinstance(entry, (Eleve, Professeur)):
+                entry.set_password(value)
+            else:
+                setattr(entry, key, value)
+
+def process_entry_data(entry, entry_data):
+    """Traite les données d'entrée avant de les enregistrer dans la base."""
+    for key, value in entry_data.items():
+        if hasattr(entry, key):
+            if isinstance(getattr(type(entry), key, None), property):
+                setattr(entry, key, value)
+            elif key == "mdp_hash" and isinstance(entry, (Eleve, Professeur)):
+                entry.set_password(value)
+            else:
+                setattr(entry, key, value)
 
 
 @admin_controller.route("/admin/delete", methods=["POST"])

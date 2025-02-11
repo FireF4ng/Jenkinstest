@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, session, redirect, url_for, jsonify, request
+from flask_wtf.csrf import generate_csrf
 from model.user_model import Eleve, Professeur, Note, Agenda, Matiere, ProfMatiere, Classe, Devoir, Feedback, db
 
 general_controller = Blueprint("general_controller", __name__)
@@ -42,7 +43,7 @@ def student_dashboard():
         .all()
     )
 
-    return render_template("main.html", role=role, eleve=eleve, notes=notes, agenda=agenda, devoirs=devoirs)
+    return render_template("main.html", role=role, eleve=eleve, notes=notes, agenda=agenda, devoirs=devoirs, csrf_token=generate_csrf())
 
 
 @general_controller.route("/teacher_dashboard")
@@ -74,7 +75,7 @@ def teacher_dashboard():
     )
 
 
-    return render_template("main.html", role=role, professeur=professeur, last_notes=last_notes, agenda=agenda, devoirs=devoirs)
+    return render_template("main.html", role=role, professeur=professeur, last_notes=last_notes, agenda=agenda, devoirs=devoirs, csrf_token=generate_csrf())
 
 
 
@@ -157,13 +158,17 @@ def communication():
     
     if request.method == "POST":
         message = request.form.get("message")
+        
         if message:
             feedback = Feedback(user_id=session["user"], user_role=session["role"], message=message)
             db.session.add(feedback)
             db.session.commit()
             return jsonify({"success": True, "message": "Feedback envoyé avec succès!"})
+        else:
+            return jsonify({"error": "Le message ne peut pas être vide"}), 400
         
     return render_template("communication.html")
+
 
 @general_controller.route("/update_credentials", methods=["POST"])
 def update_credentials():

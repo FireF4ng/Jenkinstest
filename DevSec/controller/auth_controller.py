@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
+from flask_wtf.csrf import generate_csrf
 from model.user_model import Eleve, Professeur
 import time
 
@@ -19,8 +20,11 @@ def login():
     message = "Veuillez entrer votre identifiant et mot de passe"
     
     if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        if not username or not password:
+            return jsonify({"error": "Champs obligatoires manquants"}), 400
 
         user = Eleve.query.filter_by(username=username).first() or Professeur.query.filter_by(username=username).first()
         
@@ -32,7 +36,7 @@ def login():
         message = "Identifiants incorrects"
         time.sleep(2)  # Prevents brute-force attacks
     
-    return render_template("login.html", message=message)
+    return render_template("login.html", message=message, csrf_token=generate_csrf())
 
 @auth_controller.route("/logout")
 def logout():

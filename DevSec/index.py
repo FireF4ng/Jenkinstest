@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_wtf.csrf import CSRFProtect
 from model.user_model import db, add_admin_user, create_samples
 from controller.auth_controller import auth_controller
 from controller.admin_controller import admin_controller
@@ -7,6 +8,8 @@ import os
 
 app = Flask(__name__, template_folder="view/templates", static_folder="view/static")
 app.config.from_object("config.Config")
+
+csrf = CSRFProtect(app)
 
 db.init_app(app)  # Initialize database
 
