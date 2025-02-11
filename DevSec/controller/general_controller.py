@@ -78,7 +78,6 @@ def teacher_dashboard():
     return render_template("main.html", role=role, professeur=professeur, last_notes=last_notes, agenda=agenda, devoirs=devoirs, csrf_token=generate_csrf())
 
 
-
 @general_controller.route("/update_score", methods=["POST"])
 def update_score():
     if "user" not in session or session.get("role") != "professeur":
@@ -150,24 +149,30 @@ def profile():
     return render_template("profile.html", role=role, user=user, classe=classe, professeurs=professeurs, matieres=matieres)
 
 
-@general_controller.route("/communication", methods=["GET", "POST"])
-def communication():
-    """Loads the communication page."""
+@general_controller.route("/communication", methods=["GET"])
+def communication_form():
+    """Affiche la page de communication."""
     if "user" not in session:
         return redirect(url_for(LOGIN_REDIRECT))
+    return render_template("communication.html", csrf_token=generate_csrf())
+
+
+@general_controller.route("/communication", methods=["POST"])
+def communication_submit():
+    """Traite l'envoi du formulaire de feedback."""
+    if "user" not in session:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    message = request.form.get("message")
+
+    if not message:
+        return jsonify({"error": "Message cannot be empty"}), 400
+
+    feedback = Feedback(user_id=session["user"], user_type=session["role"], message=message)
+    db.session.add(feedback)
+    db.session.commit()
     
-    if request.method == "POST":
-        message = request.form.get("message")
-        
-        if message:
-            feedback = Feedback(user_id=session["user"], user_role=session["role"], message=message)
-            db.session.add(feedback)
-            db.session.commit()
-            return jsonify({"success": True, "message": "Feedback envoyé avec succès!"})
-        else:
-            return jsonify({"error": "Le message ne peut pas être vide"}), 400
-        
-    return render_template("communication.html")
+    return jsonify({"success": True, "message": "Feedback envoyé!"})
 
 
 @general_controller.route("/update_credentials", methods=["POST"])
