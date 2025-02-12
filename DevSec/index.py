@@ -1,5 +1,6 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_wtf.csrf import CSRFProtect
+from extensions import limiter, logger
 from model.user_model import db, add_admin_user, create_samples
 from controller.auth_controller import auth_controller
 from controller.admin_controller import admin_controller
@@ -9,7 +10,10 @@ import os
 app = Flask(__name__, template_folder="view/templates", static_folder="view/static")
 app.config.from_object("config.Config")
 
-csrf = CSRFProtect(app)
+# Initialise Flask-Limiter avec l'application
+limiter.init_app(app)
+
+csrf = CSRFProtect(app) # Initialize CSRF protection
 
 db.init_app(app)  # Initialize database
 
@@ -42,6 +46,5 @@ if __name__ == "__main__":
 
 
 """TODO:
-- Implementation Sonarqube et flake8 (noter toutes failles critiques et high)
 - Commenter le code et verifier si tout nom variables correct
 """

@@ -1,13 +1,17 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 from flask_wtf.csrf import generate_csrf
 from model.user_model import Eleve, Professeur
-import time
+from extensions import limiter, logger
+import re
 
 auth_controller = Blueprint("auth_controller", __name__)
 
-auth_controller = Blueprint("auth_controller", __name__)
 LOGIN_ROUTE = "auth_controller.login"
 MAIN_MENU_ROUTE = "auth_controller.main_menu"
+
+def is_valid_username(username):
+    """Empêche l'injection SQL en vérifiant les caractères autorisés"""
+    return bool(re.match(r"^[a-zA-Z0-9_]+$", username))
 
 @auth_controller.route("/")
 def home():
@@ -23,13 +27,18 @@ def login_form():
     return render_template("login.html", csrf_token=generate_csrf())
 
 @auth_controller.route("/login", methods=["POST"])
+@limiter.limit("50000 per minute")
 def login():
     """Traite la soumission du formulaire de connexion."""
     if "user" in session:
         return redirect(url_for(MAIN_MENU_ROUTE))
 
-    username = request.form.get("username")
-    password = request.form.get("password")
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "").strip()
+
+    if not is_valid_username(username):
+        logger.warning(f"Tentative de connexion suspecte - Username invalide : {username}")
+        return render_template("login.html", message="Nom d'utilisateur invalide", csrf_token=generate_csrf())
 
     user = Eleve.query.filter_by(username=username).first() or Professeur.query.filter_by(username=username).first()
 
@@ -37,6 +46,8 @@ def login():
         session["user"] = user.id
         session["role"] = "eleve" if isinstance(user, Eleve) else "professeur"
         return redirect(url_for(MAIN_MENU_ROUTE))
+
+    logger.warning(f"Tentative de connexion echouee pour l'utilisateur : {username}")
 
     return render_template("login.html", message="Identifiants incorrects", csrf_token=generate_csrf())
 
