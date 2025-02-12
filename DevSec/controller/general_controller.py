@@ -25,9 +25,6 @@ def student_dashboard():
     role = "eleve"
     notes = eleve.get_notes()
 
-    print(eleve.nom)
-    print(eleve._nom)
-
     agenda = (
         Agenda.query
         .join(Matiere)

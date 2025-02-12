@@ -16,7 +16,7 @@
     <script>
         document.getElementById("feedbackform").addEventListener("submit", function(event) {
             event.preventDefault();
-            fetch("{{ url_for('general_controller.communication') }}", {
+            fetch("{{ url_for('general_controller.communication_submit') }}", {
                 method: "POST",
                 body: new FormData(this)
             })
