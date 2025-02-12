@@ -18,10 +18,11 @@ document.querySelectorAll('.close').forEach(button => {
 document.getElementById('saveScoreBtn').addEventListener('click', function() {
     let noteId = this.dataset.noteId;
     let newScore = document.getElementById('newScoreInput').value;
+    let csrfToken = document.querySelector('[name="csrf_token"]').value;
 
     fetch('/update_score', {
         method: 'POST',
-        body: new URLSearchParams({ note_id: noteId, new_score: newScore }),
+        body: new URLSearchParams({ note_id: noteId, new_score: newScore, csrf_token: csrfToken }),
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     })
     .then(response => response.json())

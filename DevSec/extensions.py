@@ -1,7 +1,7 @@
 import logging
 
 logging.basicConfig(
-    filename="logs/security.log",  # 🔥 Chemin du fichier log
+    filename="DevSec/logs/security.log",  # 🔥 Chemin du fichier log
     level=logging.WARNING,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )

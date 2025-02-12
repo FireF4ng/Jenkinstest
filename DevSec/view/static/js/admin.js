@@ -152,21 +152,24 @@ async function updateEntry(table, id) {
     const formData = new FormData(form);
     let updates = Object.fromEntries(formData.entries());
 
-    // Convert date fields to YYYY-MM-DD
+    // Ajouter le token CSRF
+    updates.csrf_token = form.querySelector('[name="csrf_token"]').value;
+
+    // Convertir les dates au format YYYY-MM-DD
     for (let key in updates) {
         let inputElement = form.querySelector(`[name="${key}"]`);
         if (inputElement && inputElement.type === "date") {
             let dateValue = inputElement.value;
             if (dateValue) {
-                updates[key] = new Date(dateValue).toISOString().split("T")[0];  // Ensure correct format
+                updates[key] = new Date(dateValue).toISOString().split("T")[0];
             }
         }
     }
 
     const response = await fetch('/admin/update', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({table, id, updates})
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table, id, updates })
     });
 
     const result = await response.json();
@@ -178,6 +181,7 @@ async function updateEntry(table, id) {
         alert("Error: " + result.error);
     }
 }
+
 
 async function deleteEntry(table, id) {
     if (!confirm('Are you sure you want to delete this entry?')) return;

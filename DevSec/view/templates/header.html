@@ -37,6 +37,7 @@
                     <span class="close" onclick="closeParametersModal()">&times;</span>
                     <h4>Modifier les identifiants</h4>
                     <form id="changeCredentialsForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <label for="old_password">Ancien mot de passe:</label>
                         <input type="password" id="old_password" required>
                     </br></br>
