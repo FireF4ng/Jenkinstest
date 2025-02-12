@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_wtf.csrf import CSRFProtect
-from extensions import limiter, logger
+from extensions import limiter
 from model.user_model import db, add_admin_user, create_samples
 from controller.auth_controller import auth_controller
 from controller.admin_controller import admin_controller

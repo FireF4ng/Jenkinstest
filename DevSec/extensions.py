@@ -10,7 +10,6 @@ logger = logging.getLogger("security")
 
 # 🔹 Intercepter les erreurs 429 et les enregistrer
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 import os
 
 limiter = Limiter(
