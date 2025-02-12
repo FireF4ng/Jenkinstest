@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask
 from flask_wtf.csrf import CSRFProtect
 from extensions import limiter, logger
 from model.user_model import db, add_admin_user, create_samples
