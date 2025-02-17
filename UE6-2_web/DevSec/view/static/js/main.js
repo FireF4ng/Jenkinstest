@@ -16,6 +16,7 @@ document.querySelectorAll('.close').forEach(button => {
 
 // Handle saving new score
 document.getElementById('saveScoreBtn').addEventListener('click', function() {
+    console.log("🟢 Save button clicked!");
     let noteId = this.dataset.noteId;
     let newScore = document.getElementById('newScoreInput').value;
     let csrfToken = document.querySelector('[name="csrf_token"]').value;

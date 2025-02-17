@@ -119,6 +119,7 @@ async function loadAddForm(table) {
     });
     formHtml += `
         <div class="form-group row">
+        
             <div class="col-sm-9 offset-sm-3">
                 <button type="button" class="btn btn-success" onclick="addEntry('${table}')">Add</button>
             </div>
@@ -134,25 +135,37 @@ async function addEntry(table) {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
+    // Ajout du token CSRF
+    data.csrf_token = form.querySelector('[name="csrf_token"]').value;
+
     const response = await fetch(`/admin/add`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({table, data})
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table, data })
     });
 
     const result = await response.json();
     if (result.success) {
+        alert("Entry added successfully!");
         loadTableData(table);
-        bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+        
+        // Vérifier si le modal existe avant de le fermer
+        const addModal = document.getElementById('addModal');
+        if (addModal) {
+            bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+        }
+    } else {
+        alert("Error: " + result.error);
     }
 }
+
 
 async function updateEntry(table, id) {
     const form = document.getElementById(`edit-form-${table}`);
     const formData = new FormData(form);
     let updates = Object.fromEntries(formData.entries());
 
-    // Ajouter le token CSRF
+    // Ajout du token CSRF
     updates.csrf_token = form.querySelector('[name="csrf_token"]').value;
 
     // Convertir les dates au format YYYY-MM-DD
@@ -161,7 +174,7 @@ async function updateEntry(table, id) {
         if (inputElement && inputElement.type === "date") {
             let dateValue = inputElement.value;
             if (dateValue) {
-                updates[key] = new Date(dateValue).toISOString().split("T")[0];
+                updates[key] = new Date(dateValue).toISOString().split("T")[0];  
             }
         }
     }

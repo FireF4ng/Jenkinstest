@@ -1,5 +1,5 @@
 from flask import Blueprint, request, session, jsonify, redirect, url_for, render_template
-from flask_wtf.csrf import generate_csrf
+from flask_wtf.csrf import generate_csrf, validate_csrf
 from model.user_model import Eleve, Professeur, Matiere, Note, Classe, ProfMatiere, Feedback, Devoir, Agenda, db
 from datetime import datetime
 
@@ -138,8 +138,13 @@ def update_entry():
     """Met à jour une entrée existante."""
     if error := validate_admin_access():
         return error
-
+    
     data = request.json
+
+    csrf_token = data.get("csrf_token")  # Récupération du token depuis la requête
+    if not csrf_token or not validate_csrf(csrf_token):
+        return jsonify({"success": False, "error": "Invalid CSRF token"}), 403
+    
     table, entry_id, updates = data.get("table"), data.get("id"), data.get("updates")
 
     if not all([table, entry_id, updates]):
@@ -194,6 +199,11 @@ def add_entry():
         return error
     
     data = request.json
+
+    csrf_token = data.get("csrf_token")  # Récupération du token depuis la requête
+    if not csrf_token or not validate_csrf(csrf_token):
+        return jsonify({"success": False, "error": "Invalid CSRF token"}), 403
+
     table, entry_data = data.get("table"), data.get("data")
 
     if not table or not entry_data:

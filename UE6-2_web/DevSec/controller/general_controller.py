@@ -112,7 +112,7 @@ def cahier_de_texte():
         agenda = Agenda.query.filter_by(professeur_id=professeur.id).join(Matiere).join(Professeur).join(Classe).all()
         devoirs = Devoir.query.filter_by(professeur_id=professeur.id).join(Matiere).all()
 
-    return render_template("cahier_de_texte.html", role=role, agenda=agenda, devoirs=devoirs)
+    return render_template("cahier_de_texte.html", role=role, agenda=agenda, devoirs=devoirs, csrf_token=generate_csrf())
 
 @general_controller.route("/vie_scolaire")
 def vie_scolaire():
@@ -129,7 +129,7 @@ def vie_scolaire():
     classe_mates = Eleve.query.filter_by(classe_id=eleve.classe_id).all() if role == "eleve" else Eleve.query.join(Classe).filter(Classe.prof_principal == professeur.id).all()
     notes = Note.query.filter_by(eleve_id=session["user"]).join(Matiere).all() if role == "eleve" else Note.query.all()
 
-    return render_template("vie_scolaire.html", role=role, eleve=eleve, professeur=professeur, classe_mates=classe_mates, prof_principal=prof_principal, notes=notes)
+    return render_template("vie_scolaire.html", role=role, eleve=eleve, professeur=professeur, classe_mates=classe_mates, prof_principal=prof_principal, notes=notes, csrf_token=generate_csrf())
 
 @general_controller.route("/profile")
 def profile():
@@ -143,7 +143,7 @@ def profile():
     professeurs = ProfMatiere.query.filter(ProfMatiere.matiere_id.in_([note.matiere_id for note in user.notes])).all() if role == "eleve" else None
     matieres = ProfMatiere.query.filter_by(professeur_id=user.id).all() if role == "professeur" else None
 
-    return render_template("profile.html", role=role, user=user, classe=classe, professeurs=professeurs, matieres=matieres)
+    return render_template("profile.html", role=role, user=user, classe=classe, professeurs=professeurs, matieres=matieres, csrf_token=generate_csrf())
 
 
 @general_controller.route("/communication", methods=["GET"])
@@ -177,7 +177,11 @@ def update_credentials():
     if "user" not in session:
         return jsonify({"success": False, "error": "Not logged in"}), 403
 
+    print("🟢 Requête POST reçue !")
+
     data = request.json
+    print(f"Received data: {data}")  # Vérification des données reçues
+
     old_password = data.get("old_password")
     new_password = data.get("new_password")
 
@@ -185,11 +189,14 @@ def update_credentials():
         return jsonify({"success": False, "error": "All fields are required"}), 400
 
     user = Eleve.query.get(session["user"]) or Professeur.query.get(session["user"])
+    if not user:
+        return jsonify({"success": False, "error": "User not found"}), 404
 
-    if not user or not user.check_password(old_password):
+    if not user.check_password(old_password):
         return jsonify({"success": False, "error": "Invalid current credentials"}), 400
 
     user.set_password(new_password)
     db.session.commit()
 
     return jsonify({"success": True, "message": "Credentials updated successfully"})
+
