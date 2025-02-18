@@ -8,100 +8,105 @@ from crypto import vigenere_encrypt, vigenere_decrypt, normalize_key
 P = 23
 G = 5
 
-clients = {}
+class ChatServer:
+    def __init__(self, host="0.0.0.0", port=12345):
+        self.host = host
+        self.port = port
+        self.clients = {}
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-HOST = "0.0.0.0"
-PORT = 12345
+        self.root = tk.Tk()
+        self.root.title("Serveur")
 
-def diffie_hellman_private():
-    return random.randint(2, P - 2)
+        self.text_area = scrolledtext.ScrolledText(self.root, wrap=tk.WORD)
+        self.text_area.pack()
 
-def diffie_hellman_shared(private_key, public_key):
-    return (public_key ** private_key) % P
+        self.input_box = tk.Entry(self.root)
+        self.input_box.pack()
 
-def handle_client(client_socket, addr, text_area):
-    try:
-        client_socket.send(str(P).encode())
-        client_socket.send(str(G).encode())
+        self.send_button = tk.Button(self.root, text="Envoyer", command=self.server_send_message)
+        self.send_button.pack()
 
-        private_key = diffie_hellman_private()
-        public_key = (G ** private_key) % P
-        client_socket.send(str(public_key).encode())
+    def diffie_hellman_private(self):
+        return random.randint(2, P - 2)
 
-        client_public_key = int(client_socket.recv(1024).decode())
-        shared_key = diffie_hellman_shared(private_key, client_public_key)
-        key_str = normalize_key(shared_key)
+    def diffie_hellman_shared(self, private_key, public_key):
+        return (public_key ** private_key) % P
 
-        name = client_socket.recv(1024).decode().strip()
-        clients[name] = (client_socket, key_str)
+    def handle_client(self, client_socket, addr):
+        try:
+            client_socket.send(str(P).encode())
+            client_socket.send(str(G).encode())
 
-        text_area.insert(tk.END, f"[+] {name} connecté depuis {addr}\n")
+            private_key = self.diffie_hellman_private()
+            public_key = (G ** private_key) % P
+            client_socket.send(str(public_key).encode())
 
-        while True:
-            encrypted_data = client_socket.recv(1024).decode()
-            if not encrypted_data:
-                break
+            client_public_key = int(client_socket.recv(1024).decode())
+            shared_key = self.diffie_hellman_shared(private_key, client_public_key)
+            key_str = normalize_key(shared_key)
 
-            decrypted_message = vigenere_decrypt(encrypted_data, key_str)
-            text_area.insert(tk.END, f"[{name}] {decrypted_message}\n")
+            name = client_socket.recv(1024).decode().strip()
+            self.clients[name] = (client_socket, key_str)
 
-            if decrypted_message == "/users":
-                user_list = "Utilisateurs connectés: " + ", ".join(clients.keys())
-                client_socket.send(vigenere_encrypt(user_list, key_str).encode())
+            self.text_area.insert(tk.END, f"[+] {name} connecté depuis {addr}\n")
 
-            elif decrypted_message.startswith("@"):
-                parts = decrypted_message.split(" ", 1)
-                if len(parts) < 2:
-                    continue
-                target, msg = parts
-                target = target[1:]
+            while True:
+                encrypted_data = client_socket.recv(1024).decode()
+                if not encrypted_data:
+                    break
 
-                if target in clients:
-                    target_socket, target_key = clients[target]
-                    target_socket.send(vigenere_encrypt(f"[Message privé] {name}: {msg}", target_key).encode())
+                decrypted_message = vigenere_decrypt(encrypted_data, key_str)
+                self.text_area.insert(tk.END, f"[{name}] {decrypted_message}\n")
+
+                if decrypted_message == "/users":
+                    user_list = "Utilisateurs connectés: " + ", ".join(self.clients.keys())
+                    client_socket.send(vigenere_encrypt(user_list, key_str).encode())
+                elif decrypted_message.startswith("@"):  
+                    target, msg = decrypted_message[1:].split(" ", 1)
+                    if target in self.clients:
+                        target_socket, target_key = self.clients[target]
+                        target_socket.send(vigenere_encrypt(f"[Message privé] {name}: {msg}", target_key).encode())
+                    else:
+                        client_socket.send(vigenere_encrypt(f"Utilisateur {target} introuvable.", key_str).encode())
                 else:
-                    client_socket.send(vigenere_encrypt(f"Utilisateur {target} introuvable.", key_str).encode())
+                    for client_name, (client, client_key) in self.clients.items():
+                        if client_name != name:
+                            client.send(vigenere_encrypt(f"[{name}] : {decrypted_message}", client_key).encode())
+        except Exception as e:
+            self.text_area.insert(tk.END, f"[-] Erreur avec {addr}: {e}\n")
+        finally:
+            self.text_area.insert(tk.END, f"[-] {name} déconnecté\n")
+            self.clients.pop(name, None)
+            client_socket.close()
 
+    def server_send_message(self):
+        message = self.input_box.get()
+        self.text_area.insert(tk.END, f"[Serveur]: {message}\n")
+        if message.startswith("@"): 
+            target, msg = message[1:].split(" ", 1)
+            if target in self.clients:
+                target_socket, target_key = self.clients[target]
+                target_socket.send(vigenere_encrypt(f"[Message privé] Serveur: {msg}", target_key).encode())
             else:
-                for client_name, (client, client_key) in clients.items():
-                    if client_name != name:
-                        client.send(vigenere_encrypt(f"[{name}] {decrypted_message}", client_key).encode())
+                self.text_area.insert(tk.END, f"[Serveur]: Utilisateur {target} introuvable.\n")
+        else:
+            for client_name, (client_socket, client_key) in self.clients.items():
+                client_socket.send(vigenere_encrypt(f"[Serveur]: {message}", client_key).encode())
+            self.input_box.delete(0, tk.END)
 
-    except Exception as e:
-        text_area.insert(tk.END, f"[-] Erreur avec {addr}: {e}\n")
+    def start(self):
+        self.server_socket.bind((self.host, self.port))
+        self.server_socket.listen(5)
 
-    finally:
-        text_area.insert(tk.END, f"[-] {name} déconnecté\n")
-        clients.pop(name, None)
-        client_socket.close()
+        threading.Thread(target=self.accept_connections, daemon=True).start()
+        self.root.mainloop()
 
-def server_send_message():
-    """Permet au serveur d'envoyer un message global."""
-    while True:
-        message = input("Serveur: ")
-        for client_name, (client_socket, client_key) in clients.items():
-            client_socket.send(vigenere_encrypt(f"Serveur: {message}", client_key).encode())
-
-def start_server():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((HOST, PORT))
-    server.listen(5)
-
-    root = tk.Tk()
-    root.title("Serveur")
-
-    text_area = scrolledtext.ScrolledText(root, wrap=tk.WORD)
-    text_area.pack()
-
-    threading.Thread(target=server_send_message, daemon=True).start()
-
-    def accept_connections():
+    def accept_connections(self):
         while True:
-            client_socket, addr = server.accept()
-            threading.Thread(target=handle_client, args=(client_socket, addr, text_area), daemon=True).start()
-
-    threading.Thread(target=accept_connections, daemon=True).start()
-    root.mainloop()
+            client_socket, addr = self.server_socket.accept()
+            threading.Thread(target=self.handle_client, args=(client_socket, addr), daemon=True).start()
 
 if __name__ == "__main__":
-    start_server()
+    server = ChatServer()
+    server.start()
