@@ -1,47 +1,81 @@
 import socket
 import threading
-from crypto import vigenere_encrypt, vigenere_decrypt
+import os
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.backends import default_backend
+import base64
 
 HOST = "0.0.0.0"
 PORT = 12345
-KEY = "SECRET"
 
 clients = {}  # Dictionnaire {socket: nom}
+keys = {}  # Dictionnaire {socket: clé symétrique}
+
+# Génération des clés RSA
+private_key = rsa.generate_private_key(
+    public_exponent=65537,
+    key_size=2048,
+    backend=default_backend()
+)
+public_key = private_key.public_key()
+
+# Sérialisation de la clé publique
+public_pem = public_key.public_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PublicFormat.SubjectPublicKeyInfo
+)
 
 def handle_client(client_socket, addr):
-    """Gère un client : reçoit son nom et retransmet les messages."""
+    """Gère un client : reçoit son nom et sa clé symétrique."""
     try:
         name = client_socket.recv(1024).decode("utf-8").strip()
         clients[client_socket] = name
         print(f"[+] Nouvelle connexion : {addr} - {name}")
 
-        while True:
-            encrypted_data = client_socket.recv(1024).decode()
-            if not encrypted_data:
-                break  # Client déconnecté
-            
-            decrypted_message = vigenere_decrypt(encrypted_data, KEY)
-            print(f"[{addr[0]} {name}] {decrypted_message}")
+        # Envoi de la clé publique au client
+        client_socket.send(public_pem)
 
-            # Envoyer à tous les autres clients
-            broadcast(f"[{name}] {decrypted_message}", client_socket)
+        # Réception de la clé symétrique chiffrée
+        encrypted_key = client_socket.recv(256)
+        symmetric_key = private_key.decrypt(
+            encrypted_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+        keys[client_socket] = symmetric_key.decode()
+
+        print(f"[+] Clé symétrique reçue pour {name}: {keys[client_socket]}")
+
+        while True:
+            message = client_socket.recv(1024).decode()
+            if not message:
+                break
+            print(f"[{addr[0]} {name}] {message}")
+            broadcast(f"[{addr[0]} {name}] {message}", client_socket)
 
     except:
-        print(f"[-] Erreur avec {addr} ({name})")
+        pass
     finally:
         print(f"[-] Déconnexion : {addr} - {clients.get(client_socket, 'Inconnu')}")
         clients.pop(client_socket, None)
+        keys.pop(client_socket, None)
         client_socket.close()
 
 def broadcast(message, sender_socket):
     """Envoie le message à tous les clients sauf l'émetteur."""
-    for client in list(clients.keys()):  # Utilisation de list() pour éviter les erreurs de suppression
+    for client in clients.keys():
         if client != sender_socket:
             try:
                 client.send(message.encode("utf-8"))
             except:
                 client.close()
                 clients.pop(client, None)
+                keys.pop(client, None)
 
 def start_server():
     """Lance le serveur et accepte les connexions entrantes."""
