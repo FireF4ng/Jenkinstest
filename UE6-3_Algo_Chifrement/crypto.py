@@ -2,10 +2,19 @@ import itertools
 
 DEFAULT_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
+def normalize_key(key):
+    """Transforme la clé en une chaîne uniquement composée des caractères de l'alphabet."""
+    key = str(key)
+    if not key:
+        key = "DEFAULTKEY"  # Valeur par défaut pour éviter les erreurs
+    return ''.join(DEFAULT_ALPHABET[int(c) % len(DEFAULT_ALPHABET)] for c in key if c.isdigit())
+
 def generate_vigenere_key(text, key):
-    """Génère une clé répétée pour qu'elle ait la même longueur que le texte."""
-    filtered_text = ''.join(c for c in text if c in DEFAULT_ALPHABET)
-    repeated_key = ''.join(itertools.islice(itertools.cycle(key), len(filtered_text)))
+    """Génère une clé répétée pour correspondre à la longueur du texte."""
+    key = normalize_key(key)  # Assurer que la clé est correcte
+    if not key:  # Double sécurité
+        key = "DEFAULTKEY"
+    repeated_key = ''.join(itertools.islice(itertools.cycle(key), len(text)))
     return repeated_key
 
 def vigenere_encrypt(text, key, alphabet=DEFAULT_ALPHABET):
