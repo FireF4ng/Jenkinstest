@@ -1,6 +1,6 @@
 import socket
 import threading
-from crypto import vigenere_encrypt, vigenere_decrypt
+from crypto import vigenere_decrypt
 
 HOST = "0.0.0.0"
 PORT = 12345

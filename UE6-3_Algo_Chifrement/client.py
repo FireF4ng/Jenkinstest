@@ -1,6 +1,6 @@
 import socket
 import threading
-from crypto import vigenere_encrypt, vigenere_decrypt
+from crypto import vigenere_encrypt
 
 KEY = "SECRET"
 HOST = "127.0.0.1"
