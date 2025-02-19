@@ -2,7 +2,7 @@ import socket
 import threading
 import random
 import tkinter as tk
-from tkinter import scrolledtext
+from tkinter import scrolledtext, simpledialog, Frame, LEFT
 from crypto import vigenere_encrypt, vigenere_decrypt, normalize_key
 
 P = 23
@@ -26,6 +26,31 @@ class ChatServer:
 
         self.send_button = tk.Button(self.root, text="Envoyer", command=self.server_send_message)
         self.send_button.pack()
+
+        buttons = Frame(self.root)
+        buttons.pack()
+
+        users_button = tk.Button(self.root, text="Liste des utilisateurs", command=self.users)
+        users_button.pack(in_=buttons, side=LEFT)
+
+        kick_button = tk.Button(self.root, text="Kick User", command=self.kick)
+        kick_button.pack(in_=buttons, side=LEFT)
+
+    def users(self):
+        """Demande la liste des utilisateurs."""
+        user_list = "Utilisateurs connectés: " + ", ".join(self.clients.keys())
+        self.text_area.insert(tk.END, f"[Serveur]: {user_list}\n")
+
+    def kick(self):
+        target = simpledialog.askstring("Kick", "Nom de l'utilisateur à kicker :", parent=self.root)
+        if target in self.clients:
+            target_socket, target_key = self.clients[target]
+            target_socket.send(vigenere_encrypt(f"Vous etes kick du serveur (déconnecté)", target_key).encode())
+            target_socket.close()
+            self.clients.pop(target, None)
+            self.text_area.insert(tk.END, f"[Serveur]: Utilisateur {target} déconnecté.\n")
+        else:
+            self.text_area.insert(tk.END, f"[Serveur]: Utilisateur {target} introuvable.\n")
 
     def diffie_hellman_private(self):
         return random.randint(2, P - 2)
@@ -93,7 +118,7 @@ class ChatServer:
         else:
             for client_name, (client_socket, client_key) in self.clients.items():
                 client_socket.send(vigenere_encrypt(f"[Serveur]: {message}", client_key).encode())
-            self.input_box.delete(0, tk.END)
+        self.input_box.delete(0, tk.END)
 
     def start(self):
         self.server_socket.bind((self.host, self.port))
